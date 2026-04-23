@@ -1,16 +1,16 @@
 {
   description = "nebula root flake - inventory-driven NixOS config with Colmena";
 
-  inputs = { # NOTE: using git+ because GitHub tarball CDN API sucks sometimes serving truncated tarballs
-    nixpkgs.url = "git+https://github.com/NixOS/nixpkgs?ref=nixos-unstable";
-
-    colmena.url = "git+https://github.com/zhaofengli/colmena";
+  inputs = {
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+    colmena.url = "github:zhaofengli/colmena";
     colmena.inputs.nixpkgs.follows = "nixpkgs";
 
-    disko.url = "git+https://github.com/nix-community/disko";
+    # Core shared modules used by every host (kept in root to avoid duplication)
+    disko.url = "github:nix-community/disko";
     disko.inputs.nixpkgs.follows = "nixpkgs";
 
-    sops-nix.url = "git+https://github.com/Mic92/sops-nix";
+    sops-nix.url = "github:Mic92/sops-nix";
     sops-nix.inputs.nixpkgs.follows = "nixpkgs";
 
     # Packs as nested flakes — they can declare their own extra inputs
