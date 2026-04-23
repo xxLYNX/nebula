@@ -1,7 +1,7 @@
 {
   inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
   outputs = { self, nixpkgs, ... }: {
-    nixosModules.default = { config, primaryUser, ... }:
+    nixosModules.default = { config, pkgs, primaryUser, ... }:
     let
       inventory = builtins.fromJSON (builtins.readFile ../../../inventory/machines.json);
       machine = inventory.machines.testbed;
