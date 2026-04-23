@@ -24,7 +24,7 @@
     };
   };
 
-  outputs = { self, nixpkgs, colmena, ... } @ inputs:
+  outputs = { self, nixpkgs, colmena, disko, sops-nix, ... } @ inputs:
   let
     inventory = builtins.fromJSON (builtins.readFile ./inventory/machines.json);
 
