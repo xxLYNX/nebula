@@ -1,0 +1,12 @@
+{
+	"machines": {
+		"testbed": {
+			"hostname": "testbed",
+			"primaryUser": "voyager",
+			"platform": "linux",
+			"packs": ["testing"],
+			"tags": ["testing"]
+			"swapSize": "8G"
+		}
+	}
+}
