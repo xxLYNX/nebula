@@ -62,6 +62,13 @@
         extraGroups = [ "wheel" ];
       };
 
+      # Bootloader (systemd-boot for UEFI; disko creates the EFI partition at /boot)
+      boot.loader.systemd-boot.enable = true;
+      boot.loader.efi.canTouchEfiVariables = true;
+
+      # Allow unfree firmware (required by hardware.enableAllFirmware in desktop module)
+      nixpkgs.config.allowUnfree = true;
+
       # Minimal packages for testing/dev machines
       environment.systemPackages = with pkgs; [ git curl ];
 
