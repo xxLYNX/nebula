@@ -76,9 +76,6 @@
       # Minimal packages for testing/dev machines
       environment.systemPackages = with pkgs; [ git curl ];
 
-      # Set once on first install; do not change afterwards (preserves NixOS backward-compat state)
-      system.stateVersion = "24.11";
-
       # Enable the desktop module by default for the testing role
       services.desktop = {
         enable = true;
