@@ -2,19 +2,26 @@
   description = "nebula root flake - inventory-driven NixOS config with Colmena";
 
   inputs = {
-    # Pinned to known-good commits (April 2026) to bypass GitHub CDN flakiness
+    # Pinned to a known-good nixpkgs commit for reproducibility
     nixpkgs.url = "github:NixOS/nixpkgs/b86751bc4085f48661017fa226dee99fab6c651b";
 
+    # Colmena (consider pinning to a specific commit / tag in future)
     colmena.url = "git+https://github.com/zhaofengli/colmena";
     colmena.inputs.nixpkgs.follows = "nixpkgs";
 
+    # Disk tooling
     disko.url = "git+https://github.com/nix-community/disko";
     disko.inputs.nixpkgs.follows = "nixpkgs";
 
+    # sops-nix for secrets integration
     sops-nix.url = "git+https://github.com/Mic92/sops-nix";
     sops-nix.inputs.nixpkgs.follows = "nixpkgs";
 
-    # Packs as nested flakes
+    # Local role/profile flakes (path-based)
+    home-manager = {
+      url = "github:nix-community/home-manager";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
     testing = {
       url = "path:./profiles/roles/testing";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -25,32 +32,69 @@
     };
   };
 
-  outputs = { self, nixpkgs, colmena, disko, sops-nix, ... } @ inputs:
+  outputs = { self, nixpkgs, colmena, disko, sops-nix, home-manager, ... } @ inputs:
   let
+    # inventory is the single source of truth for machines in the monorepo
     inventory = builtins.fromJSON (builtins.readFile ./inventory/machines.json);
 
+    # mkHost builds a NixOS module fragment for each host defined in the inventory.
+    # It:
+    #  - imports host-specific configuration.nix
+    #  - adds common modules (disko, sops)
+    #  - maps inventory.packs to the corresponding flakes' nixosModules.default
+    #  - passes the whole machine object as _module.args.machine so role flakes can be generic
     mkHost = name: machine: {
       imports = [
         ./hosts/${name}/configuration.nix
         disko.nixosModules.disko
         sops-nix.nixosModules.sops
+        home-manager.nixosModules.home-manager
       ] ++ (map (pack: inputs.${pack}.nixosModules.default) machine.packs);
 
+      # Pass arguments to modules produced by flakes in `packs`.
       _module.args = {
         inherit inputs;
         primaryUser = machine.primaryUser;
+        machine = machine; # whole machine object for per-host params (diskDevice, swapSize, tags, etc.)
       };
+
+      # Provide home-manager with helpful extra args so home-manager fragments can access inputs and primaryUser.
+      # This makes the module's `homeManagerModules.default` available and parameterized per-host.
+      home-manager.extraSpecialArgs = { inherit inputs; primaryUser = machine.primaryUser; };
 
       networking.hostName = machine.hostname;
     };
+
+    # Build a map of raw NixOS module attrsets keyed by host name.
+    # Used directly by Colmena (which expects NixOS modules, not lib.nixosSystem results).
+    hosts = builtins.mapAttrs mkHost inventory.machines;
+
+    # Map inventory platform string to a Nix system string.
+    systemFor = machine:
+      if machine.platform == "linux" then "x86_64-linux"
+      else machine.platform;
   in {
+    # Colmena expects a top-level attribute containing a `meta` attr (nixpkgs + specialArgs)
+    # and then the host entries. We compose that by merging `meta` with our `hosts` map.
     colmena = {
       meta = {
+        # Provide a fixed evaluation of nixpkgs for the colmena build environment
         nixpkgs = import nixpkgs { system = "x86_64-linux"; };
+        # Forward all inputs so role flakes can import nested inputs if needed
         specialArgs = inputs;
       };
-    } // builtins.mapAttrs mkHost inventory.machines;
+    } // hosts;
 
-    nixosConfigurations = colmena;
+    # nixosConfigurations must hold nixpkgs.lib.nixosSystem results so that
+    # `nix build .#nixosConfigurations.<host>.config.system.build.toplevel` works.
+    # We build each host by wrapping the mkHost module in a proper nixosSystem call.
+    nixosConfigurations = builtins.mapAttrs (name: machine:
+      nixpkgs.lib.nixosSystem {
+        system = systemFor machine;
+        modules = [ (mkHost name machine) ];
+        # Make all flake inputs available as module args (same as Colmena's specialArgs above).
+        specialArgs = inputs;
+      }
+    ) inventory.machines;
   };
 }

@@ -1,12 +1,30 @@
 {
-  inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
-  outputs = { self, nixpkgs, ... }: {
-    nixosModules.default = { config, pkgs, primaryUser, ... }:
+  description = "Testing role flake - generic NixOS module fragment for test/dev machines; includes the desktop module by default and accepts a `desktop` arg to customize behavior";
+
+  inputs = {
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+
+    # Import the reusable desktop module from the repository's modules directory.
+    # Relative path from `profiles/roles/testing` -> `modules/desktop` is ../../../modules/desktop
+    desktop = {
+      url = "path:../../../modules/desktop";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+  };
+
+  outputs = { self, nixpkgs, desktop, ... }: {
+    nixosModules.default = { config, pkgs, primaryUser, machine, ... }:
     let
-      inventory = builtins.fromJSON (builtins.readFile ../../../inventory/machines.json);
-      machine = inventory.machines.testbed;
-      diskDevice = machine.diskDevice or "/dev/sda";   # fallback for non-NVMe
+      lib = pkgs.lib;
+
+      diskDevice = if machine != null then (machine.diskDevice or "/dev/sda") else "/dev/sda";
+      swapSize   = if machine != null then (machine.swapSize or "8G") else "8G";
     in {
+      # Pull in the desktop module as an import so NixOS evaluates it in the
+      # normal module system (options/config merging) rather than calling it manually.
+      imports = [ desktop.nixosModules.default ];
+
+      # Disk partitioning via disko
       disko.devices.disk.main = {
         type = "disk";
         device = diskDevice;
@@ -31,22 +49,32 @@
               };
             };
             swap = {
-              size = machine.swapSize or "8G";
-              content = {
-                type = "swap";
-              };
+              size = swapSize;
+              content = { type = "swap"; };
             };
           };
         };
       };
 
+      # Primary user
       users.users.${primaryUser} = {
         isNormalUser = true;
         extraGroups = [ "wheel" ];
       };
 
+      # Minimal packages for testing/dev machines
       environment.systemPackages = with pkgs; [ git curl ];
-      system.stateVersion = "25.05";
+
+      # Enable the desktop module by default for the testing role
+      services.desktop = {
+        enable = true;
+        hyprland = {
+          enable = true;
+          withUWSM = true;
+          xwaylandEnable = true;
+        };
+        displayManager.enable = true;
+      };
     };
   };
 }

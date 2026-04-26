@@ -1,0 +1,212 @@
+---
+# nebula CI pipeline
+#
+# Stages:
+#   lint     — static checks (no secrets, no build required): JSON schema, Terraform fmt/validate, Nix flake check
+#   validate — inventory policy enforcement: role present, tags include role, packs allowed for role
+#   build    — Nix host builds: nixosConfigurations.<host>.config.system.build.toplevel
+#   plan     — Terraform plan (dry-run, no apply); only on protected branches / manual trigger
+#
+# Requirements:
+#   - A GitLab runner with Nix (flakes enabled) and Terraform available.
+#   - The runner does NOT need the age/sops private key for the lint/validate/build stages
+#     (those stages must succeed without secrets — secrets are only needed at deploy time).
+#   - Terraform plan stage uses protected CI variables: TF_VAR_target_host, TF_VAR_ssh_key_path.
+
+stages:
+  - lint
+  - validate
+  - build
+  - plan
+
+variables:
+  NIX_FLAGS: "--extra-experimental-features nix-command
+    --extra-experimental-features flakes"
+
+# ─── LINT ────────────────────────────────────────────────────────────────────
+
+lint:json:
+  stage: lint
+  image: alpine:latest
+  before_script:
+    - apk add --no-cache jq
+  script:
+    - echo "==> Validating inventory/machines.json is valid JSON"
+    - jq empty inventory/machines.json
+    - echo "==> Checking all machines have required fields (hostname,
+      primaryUser, role, packs)"
+    - |
+      jq -e '
+        .machines | to_entries[] | .value |
+        has("hostname") and
+        has("primaryUser") and
+        has("role") and
+        has("packs")
+      ' inventory/machines.json
+  rules:
+    - changes:
+        - inventory/machines.json
+
+lint:terraform:
+  stage: lint
+  image:
+    name: hashicorp/terraform:latest
+    entrypoint: [ "" ]
+  script:
+    - echo "==> Checking Terraform formatting"
+    - terraform -chdir=terraform fmt -check -recursive
+    - echo "==> Validating Terraform configuration (no backend init required)"
+    - terraform -chdir=terraform init -backend=false
+    - terraform -chdir=terraform validate
+  rules:
+    - changes:
+        - terraform/**/*
+
+lint:nix-flake-check:
+  stage: lint
+  image: nixos/nix:latest
+  before_script:
+    - echo "experimental-features = nix-command flakes" >> /etc/nix/nix.conf
+  script:
+    - echo "==> Running nix flake check (evaluates all flake outputs, no secrets
+      needed)"
+    - nix $NIX_FLAGS flake check --no-build
+  rules:
+    - changes:
+        - flake.nix
+        - flake.lock
+        - profiles/**/*
+        - modules/**/*
+        - hosts/**/*
+        - inventory/machines.json
+
+# ─── VALIDATE ────────────────────────────────────────────────────────────────
+
+validate:inventory-policy:
+  stage: validate
+  image: alpine:latest
+  before_script:
+    - apk add --no-cache jq bash
+  script:
+    - echo "==> Enforcing inventory policy"
+    - |
+      bash -euo pipefail << 'EOF'
+      FAIL=0
+
+      # Allowed packs per role. Extend this as new roles/packs are added.
+      # Format: role:pack1,pack2,...
+      ALLOWED_PACKS=(
+        "testing:testing"
+        "desktop:testing,desktop"
+        "server:security-host"
+        "security-host:security-host"
+      )
+
+      check_allowed() {
+        local role="$1"
+        local pack="$2"
+        for entry in "${ALLOWED_PACKS[@]}"; do
+          r="${entry%%:*}"
+          packs_str="${entry#*:}"
+          if [ "$r" = "$role" ]; then
+            IFS=',' read -ra allowed <<< "$packs_str"
+            for a in "${allowed[@]}"; do
+              [ "$a" = "$pack" ] && return 0
+            done
+          fi
+        done
+        return 1
+      }
+
+      while IFS= read -r machine_name; do
+        role=$(jq -r ".machines[\"$machine_name\"].role // empty" inventory/machines.json)
+        tags=$(jq -r ".machines[\"$machine_name\"].tags[]" inventory/machines.json 2>/dev/null || true)
+        packs=$(jq -r ".machines[\"$machine_name\"].packs[]" inventory/machines.json 2>/dev/null || true)
+
+        # 1. role must be present
+        if [ -z "$role" ]; then
+          echo "ERROR: machine '$machine_name' is missing required 'role' field"
+          FAIL=1
+        fi
+
+        # 2. tags must include the role
+        if [ -n "$role" ] && ! echo "$tags" | grep -qx "$role"; then
+          echo "ERROR: machine '$machine_name' has role '$role' but tags do not include '$role'"
+          FAIL=1
+        fi
+
+        # 3. packs must be allowed for the role
+        if [ -n "$role" ]; then
+          while IFS= read -r pack; do
+            [ -z "$pack" ] && continue
+            if ! check_allowed "$role" "$pack"; then
+              echo "ERROR: machine '$machine_name' has pack '$pack' which is not allowed for role '$role'"
+              FAIL=1
+            fi
+          done <<< "$packs"
+        fi
+
+        echo "OK: $machine_name (role=$role)"
+      done < <(jq -r '.machines | keys[]' inventory/machines.json)
+
+      [ "$FAIL" -eq 0 ] || exit 1
+      echo "==> All inventory policy checks passed"
+      EOF
+  rules:
+    - changes:
+        - inventory/machines.json
+
+# ─── BUILD ───────────────────────────────────────────────────────────────────
+
+build:nixos-hosts:
+  stage: build
+  image: nixos/nix:latest
+  before_script:
+    - echo "experimental-features = nix-command flakes" >> /etc/nix/nix.conf
+  script:
+    - echo "==> Building NixOS toplevel for each host in inventory"
+    - |
+      # Read host names from inventory and build each one.
+      # This validates the full NixOS evaluation and module composition without needing secrets.
+      hosts=$(nix $NIX_FLAGS eval --json '.#nixosConfigurations' --apply 'builtins.attrNames' | tr -d '[]"' | tr ',' '\n')
+      for host in $hosts; do
+        echo "--- Building nixosConfigurations.$host ---"
+        nix $NIX_FLAGS build ".#nixosConfigurations.$host.config.system.build.toplevel" \
+          --no-link \
+          --print-build-logs
+      done
+  rules:
+    - changes:
+        - flake.nix
+        - flake.lock
+        - profiles/**/*
+        - modules/**/*
+        - hosts/**/*
+        - inventory/machines.json
+
+# ─── PLAN (protected/manual only) ────────────────────────────────────────────
+
+plan:terraform:
+  stage: plan
+  image:
+    name: hashicorp/terraform:latest
+    entrypoint: [ "" ]
+  environment:
+    name: plan
+  script:
+    - echo "==> Terraform plan (dry-run, no apply)"
+    - terraform -chdir=terraform init -backend=false
+    - terraform -chdir=terraform plan \ -var "target_host=${TF_VAR_target_host}"
+      \ -var "ssh_key_path=${TF_VAR_ssh_key_path:-~/.ssh/id_rsa}" \ -out=tfplan
+  artifacts:
+    paths:
+      - terraform/tfplan
+    expire_in: 1 day
+  rules:
+    # Only run on protected branches or when manually triggered
+    - if: "$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH"
+      when: manual
+    - if: "$CI_COMMIT_BRANCH =~ /^release\\//"
+      when: manual
+  # Secrets (protected CI variables): set TF_VAR_target_host and TF_VAR_ssh_key_path
+  # in GitLab > Settings > CI/CD > Variables (mark as Protected + Masked).

@@ -4,6 +4,7 @@
       "hostname": "testbed",
       "primaryUser": "voyager",
       "platform": "linux",
+      "role": "testing",
       "packs": ["testing"],
       "tags": ["testing"],
       "swapSize": "8G",
