@@ -1,52 +1,53 @@
 variable "target_host" {
-  description = "SSH target for nixos-anywhere / nixos-remote in the form user@host or user@ip. No default so a caller must provide it (prevents accidental applies)."
+  description = "IP address or hostname of the target machine. No default to prevent accidental applies."
   type        = string
 
   validation {
     condition     = length(trimspace(var.target_host)) > 0
-    error_message = "target_host must be a non-empty string like 'root@192.168.50.224' or 'voyager@my-laptop.local'."
+    error_message = "target_host must be a non-empty IP or hostname, e.g. '192.168.50.100'."
   }
 }
 
-variable "ssh_key_path" {
-  description = "Path to the private SSH key used to authenticate to the target. This can be a path on the machine running terraform (CI runner or your laptop)."
+variable "install_user" {
+  description = "SSH user for connecting during installation (live ISO user, typically 'root' or 'nixos')."
   type        = string
-  default     = "~/.ssh/id_rsa"
+  default     = "root"
 }
 
-variable "ssh_options" {
-  description = "Additional ssh options to pass when nixos-anywhere/terraform module invokes ssh."
+variable "nixos_system_attr" {
+  description = "Full flake reference to the NixOS system closure to install."
   type        = string
-  default     = "-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
+  default     = "github:xxLYNX/nebula#nixosConfigurations.testbed.config.system.build.toplevel"
 }
 
-variable "ssh_private_key" {
-  description = "Optional private key contents (PEM). Use only when you prefer embedding the key material (e.g., in CI via protected variable). Prefer using `ssh_key_path` instead. If provided the module may use this value. Marked sensitive downstream when used."
+variable "nixos_partitioner_attr" {
+  description = "Full flake reference to the disko partitioner script (provided by the disko NixOS module)."
   type        = string
+  default     = "github:xxLYNX/nebula#nixosConfigurations.testbed.config.system.build.diskoNoDeps"
+}
+
+variable "install_ssh_key" {
+  description = "Contents of the SSH private key used during installation. Pass with: -var=\"install_ssh_key=$(cat ~/.ssh/id_ed25519)\""
+  type        = string
+  sensitive   = true
   default     = null
-  nullable    = true
 }
 
-variable "flake" {
-  description = "Path or URL to the root flake. Defaults to one level up from the terraform module (assumes repository layout where terraform is under the repo)."
+variable "deployment_ssh_key" {
+  description = "Contents of the SSH private key used after installation. Pass with: -var=\"deployment_ssh_key=$(cat ~/.ssh/id_ed25519)\""
   type        = string
-  default     = ".."
+  sensitive   = true
+  default     = null
 }
 
-variable "flake_attr" {
-  description = "The flake attribute corresponding to the host to deploy (nixosConfigurations.<host>)."
-  type        = string
-  default     = "testbed"
-
-  validation {
-    condition     = length(trimspace(var.flake_attr)) > 0
-    error_message = "flake_attr must be a non-empty string (e.g. 'testbed')."
-  }
-}
-
-# Optional: control whether terraform should attempt to run remote apply or just plan
-variable "apply_mode" {
-  description = "Controls whether to run an actual apply (true) or only produce a plan/dry-run (false). Consumers/CI can set this to false for gating."
+variable "build_on_remote" {
+  description = "Build the NixOS closure on the target instead of locally. Useful when running terraform from a non-Linux machine."
   type        = bool
-  default     = true
+  default     = false
+}
+
+variable "debug_logging" {
+  description = "Enable verbose debug logging in nixos-anywhere."
+  type        = bool
+  default     = false
 }

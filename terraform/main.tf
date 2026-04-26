@@ -15,17 +15,19 @@
 module "testbed" {
   source = "github.com/nix-community/nixos-anywhere//terraform/all-in-one"
 
-  # Core runtime inputs (parameterized)
-  target_host = var.target_host
-  flake       = var.flake
-  flake_attr  = var.flake_attr
+  # Target machine (IP or hostname, not user@host)
+  target_host  = var.target_host
+  install_user = var.install_user
 
-  # SSH configuration: prefer path; ssh_private_key can be used for CI-injected key material.
-  ssh_options      = var.ssh_options
-  ssh_key_path     = var.ssh_key_path
-  ssh_private_key  = var.ssh_private_key
+  # Flake outputs — full references to the system closure and disko partitioner
+  nixos_system_attr      = var.nixos_system_attr
+  nixos_partitioner_attr = var.nixos_partitioner_attr
 
-  # If the module supports other flags (e.g., timeouts / verbose) you can pass them here.
-  # Example (uncomment if the module supports it):
-  # ssh_timeout = "30s"
+  # SSH key contents (the module requires key content, not a file path)
+  install_ssh_key    = var.install_ssh_key
+  deployment_ssh_key = var.deployment_ssh_key
+
+  # Optional behaviour controls
+  build_on_remote = var.build_on_remote
+  debug_logging   = var.debug_logging
 }
