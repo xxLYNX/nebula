@@ -156,14 +156,18 @@ Operator-driven remote flow (recommended for testbed / first provisioning)
   # PowerShell (Windows)
   type $env:USERPROFILE\.ssh\id_ed25519.pub | ssh root@<TARGET_IP> "mkdir -p ~/.ssh && cat >> ~/.ssh/authorized_keys"
   ```
-- Still on the live ISO (SSH'd in or at the console), run nixos-anywhere to partition, install, and reboot:
+- Still on the live ISO (SSH'd in or at the console), allow unsigned local store paths (required for self-install), then run nixos-anywhere:
   ```bash
+  # Required: allow nix to copy unsigned paths during self-install
+  echo "require-sigs = false" >> /etc/nix/nix.conf
+
   nix --extra-experimental-features 'nix-command flakes' run github:nix-community/nixos-anywhere -- \
     --flake github:xxLYNX/nebula#testbed \
-    --build-on-remote \
+    --build-on remote \
     root@localhost
   ```
-  - `--build-on-remote` means the Nix closure is built on the live ISO itself (Nix is already present). This works correctly from Windows operator machines where Nix is unavailable.
+  - `--build-on remote` builds the Nix closure on the live ISO itself (Nix is already present). This works correctly from Windows operator machines where Nix is unavailable.
+  - `require-sigs = false` is only needed for localhost self-install; it is temporary and lives only for the duration of the live ISO session.
   - The live ISO needs internet access to fetch the flake from GitHub.
 - After the reboot, SSH into the freshly installed machine with your key.
 
