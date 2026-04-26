@@ -40,6 +40,11 @@
                 mountpoint = "/boot";
               };
             };
+            # swap must come before root so root can safely use 100% of remaining space
+            swap = {
+              size = swapSize;
+              content = { type = "swap"; };
+            };
             root = {
               size = "100%";
               content = {
@@ -47,10 +52,6 @@
                 format = "xfs";
                 mountpoint = "/";
               };
-            };
-            swap = {
-              size = swapSize;
-              content = { type = "swap"; };
             };
           };
         };
@@ -60,6 +61,9 @@
       users.users.${primaryUser} = {
         isNormalUser = true;
         extraGroups = [ "wheel" ];
+        # Temporary password for SDDM/console login. Change after first login,
+        # or replace with a sops-encrypted hashedPassword for production use.
+        initialPassword = "changeme";
       };
 
       # Bootloader (systemd-boot for UEFI; disko creates the EFI partition at /boot)
@@ -71,6 +75,9 @@
 
       # Minimal packages for testing/dev machines
       environment.systemPackages = with pkgs; [ git curl ];
+
+      # Set once on first install; do not change afterwards (preserves NixOS backward-compat state)
+      system.stateVersion = "24.11";
 
       # Enable the desktop module by default for the testing role
       services.desktop = {

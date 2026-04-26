@@ -46,7 +46,7 @@ in
         };
 
         hyprConfigSource = lib.mkOption {
-          type = lib.types.nullOr lib.types.str;
+          type = lib.types.nullOr lib.types.path;
           default = null;
           description = "Optional path to a hyprland.conf source to install as ~/.config/hypr/hyprland.conf. If null, the module uses the bundled hyprland.conf.";
         };
@@ -118,16 +118,13 @@ in
     };
 
     config = lib.mkIf (fzCfg.enable) {
-      # Install fuzzel package into the user's environment and apply settings
-      home.packages = lib.lists.unique ((fzCfg.extraHomePackages or []) ++ [ pkgs.fuzzel ]);
+      home.packages = lib.lists.unique (fzCfg.extraHomePackages or []);
 
-      # Provide a home-manager-managed file for fuzzel settings if consumers request that pattern.
-      # Many fuzzel users prefer to put settings under ~/.config/fuzzel/config; provide a simple option
-      # that writes a minimal JSON or text config when fuzzel expects it. For safety we create a
-      # plain text snippet at ~/.config/fuzzel/settings.conf as a helper.
-      home.file.".config/fuzzel/settings.conf".text = lib.toString mergedSettings;
-
-      # If more complex integration is desired, update this fragment to produce the exact format expected by fuzzel.
+      # Use home-manager's native fuzzel module which produces a correctly-formatted INI config.
+      programs.fuzzel = {
+        enable = true;
+        settings = mergedSettings;
+      };
     };
   };
 }

@@ -147,14 +147,14 @@
         services.pipewire.alsa.enable = true;
         services.pipewire.pulse.enable = true;
 
-        # Autostart helper: runs the configured commands at login as a user service.
-        # Many users prefer to put autostarts into hyprland.conf; this is an optional helper.
-        systemd.user.services."desktop-autostart" = {
+        # Autostart helper: only created when the autostart list is non-empty.
+        # Many users prefer putting autostarts into hyprland.conf; this is an optional helper.
+        systemd.user.services."desktop-autostart" = lib.mkIf (cfg.autostart != []) {
           description = "Desktop autostart helper (runs configured autostart commands)";
           wantedBy = [ "default.target" ];
           serviceConfig = {
             Type = "oneshot";
-            ExecStart = lib.concatStringsSep " && " (map (cmd: "sh -c '${lib.escapeShellCommand cmd}'") (cfg.autostart or []));
+            ExecStart = "${pkgs.writeShellScript "desktop-autostart" (lib.concatStringsSep "\n" cfg.autostart)}";
             RemainAfterExit = "no";
           };
         };

@@ -55,7 +55,7 @@ in
           };
 
           hyprConfigSource = lib.mkOption {
-            type = lib.types.nullOr lib.types.str;
+            type = lib.types.nullOr lib.types.path;
             default = null;
             description = "Optional path used as source for ~/.config/hypr/hyprland.conf. If null, uses module-bundled config.";
           };

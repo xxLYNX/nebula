@@ -138,12 +138,46 @@ Notes:
 - If your NixOS install expects secrets to be present at build time (e.g., sops-nix decrypt), ensure `SOPS_AGE_KEY_FILE` or appropriate environment is set for `nix build`.
 - Keep decrypted artifacts in tmpfs and remove them after the build completes.
 
-Operator-driven remote flow (post-bootstrap)
-- Once the first device is up and reachable, you can manage the fleet remotely from your operator workstation using:
-  - Colmena to push and activate configurations declaratively, or
-  - Terraform + nixos-anywhere to orchestrate remote SSH-based deploys.
-- Ensure the operator machine or CI runner has access to private key material (store private key securely, prefer ephemeral unencrypted memory usage or use hardware token).
-- For Terraform runs that include `nixos-anywhere`, pass `target_host`, `ssh_key_path`, and `flake_attr` as described in the repository `terraform/` module.
+Operator-driven remote flow (recommended for testbed / first provisioning)
+- Boot the target machine from a NixOS live ISO.
+- On the live ISO:
+  ```bash
+  # Set a temporary root password
+  passwd
+  # Open firewall so SSH is reachable
+  systemctl stop firewall   # or: iptables -I INPUT -p tcp --dport 22 -j ACCEPT
+  # Start sshd
+  systemctl start sshd
+  # Note the IP
+  ip addr
+  ```
+- From your operator machine (Windows / Linux / macOS), copy your SSH public key:
+  ```powershell
+  # PowerShell (Windows)
+  type $env:USERPROFILE\.ssh\id_ed25519.pub | ssh root@<TARGET_IP> "mkdir -p ~/.ssh && cat >> ~/.ssh/authorized_keys"
+  ```
+- Still on the live ISO (SSH'd in or at the console), run nixos-anywhere to partition, install, and reboot:
+  ```bash
+  nix --extra-experimental-features 'nix-command flakes' run github:nix-community/nixos-anywhere -- \
+    --flake github:xxLYNX/nebula#testbed \
+    --build-on-remote \
+    root@localhost
+  ```
+  - `--build-on-remote` means the Nix closure is built on the live ISO itself (Nix is already present). This works correctly from Windows operator machines where Nix is unavailable.
+  - The live ISO needs internet access to fetch the flake from GitHub.
+- After the reboot, SSH into the freshly installed machine with your key.
+
+Post-install first login
+- The primary user (`voyager` by default) has `initialPassword = "changeme"`. Change it on first login:
+  ```bash
+  passwd
+  ```
+- For production, replace `initialPassword` with a `sops`-encrypted `hashedPassword`.
+
+Terraform (alternative / future use)
+- The `terraform/` directory wraps nixos-anywhere in HCL for structured state tracking.
+- nixos-anywhere's terraform module executes shell scripts locally, so Terraform must be run from Linux or WSL (not native Windows).
+- For native Windows deployments use the direct nixos-anywhere method above.
 
 Key rotation and recovery
 - Keep at least two backups of the private key in separate physical locations (e.g., two LUKS-encrypted USBs).
@@ -172,6 +206,75 @@ Checklist before first push to a new machine
 - [ ] Decrypt test: `sops --decrypt` works when USB is mounted.
 - [ ] Local `colmena` or `nixos-rebuild` test run on the device succeeds in a dry run (build).
 - [ ] Remove USB after the deployment and check the device functions as expected.
+
+---
+
+Quick contributor guides
+
+## Adding a new machine
+
+1. Add an entry to `inventory/machines.json`:
+   ```json
+   "myhostname": {
+     "hostname": "myhostname",
+     "primaryUser": "alice",
+     "platform": "linux",
+     "role": "testing",
+     "packs": ["testing"],
+     "tags": ["testing"],
+     "swapSize": "8G",
+     "diskDevice": "/dev/sda"
+   }
+   ```
+   - `packs` must match flake input names declared in the root `flake.nix` inputs.
+2. Create `hosts/myhostname/configuration.nix` (copy from `hosts/testbed/`).
+3. Create `hosts/myhostname/hardware-configuration.nix` — nixos-anywhere generates this automatically on first deploy; leave it as `{ ... }: { }` until then.
+4. If using a new role, add it to `profiles/roles/<role>/flake.nix` and register it as an input in the root `flake.nix`.
+5. Commit and push. Deploy using the nixos-anywhere method above.
+
+## Adding a new NixOS module (system-level)
+
+1. Create `modules/<mymodule>/flake.nix` exporting `nixosModules.default`.
+2. Register it as a flake input in the root `flake.nix`:
+   ```nix
+   mymodule = {
+     url = "path:./modules/mymodule";
+     inputs.nixpkgs.follows = "nixpkgs";
+   };
+   ```
+3. Add `"mymodule"` to `packs` for any machine in `inventory/machines.json` that should use it.
+   The root flake's `mkHost` automatically imports `inputs.mymodule.nixosModules.default` for each pack listed.
+
+## Adding a home-manager module
+
+Home-manager modules live in `modules/desktop/home-modules/` (for desktop-specific fragments) or can be standalone flake modules.
+
+1. Create `modules/desktop/home-modules/<name>/<name>.nix` returning a home-manager module attrset:
+   ```nix
+   { pkgs, lib ? pkgs.lib }:
+   {
+     myFragment = { config, pkgs, lib, ... }: {
+       options.homeManager.myFeature.enable = lib.mkOption { type = lib.types.bool; default = false; };
+       config = lib.mkIf config.homeManager.myFeature.enable {
+         home.packages = [ pkgs.mything ];
+       };
+     };
+   }
+   ```
+2. Import the fragment in the relevant role or host by adding it to `home-manager.users.<user>.imports`:
+   ```nix
+   home-manager.users.${primaryUser} = {
+     imports = [ (import ./modules/desktop/home-modules/myname/myname.nix { inherit pkgs; }).myFragment ];
+   };
+   ```
+3. The desktop module's `homeManagerModules.default` can be used as a standalone home-manager module by importing `desktop.homeManagerModules.default` where `desktop` is the desktop flake input.
+
+## Adding a new role
+
+1. Create `profiles/roles/<role>/flake.nix` exporting `nixosModules.default` as a NixOS module function `{ config, pkgs, primaryUser, machine, ... }: { ... }`.
+2. Register it as a flake input in the root `flake.nix` (same as a module above).
+3. Set `"role": "<role>"` and add the role name to `"packs"` in `inventory/machines.json` for the target machine.
+4. The root flake passes `primaryUser` and `machine` as `_module.args`, so role modules can access per-host data from `machine.diskDevice`, `machine.swapSize`, etc.
 
 Troubleshooting tips
 - If `nix build` fails due to missing secrets: ensure `SOPS_AGE_KEY_FILE` is set and the private key is readable by the build process.
