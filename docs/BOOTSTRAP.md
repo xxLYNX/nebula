@@ -158,15 +158,20 @@ Operator-driven remote flow (recommended for testbed / first provisioning)
   ```
 - Still on the live ISO (SSH'd in or at the console), allow unsigned local store paths (required for self-install), then run nixos-anywhere:
   ```bash
+  # Allow unsigned store paths in the live ISO's nix daemon (safe: live ISO is RAM-only,
+  # this is gone after the reboot nixos-anywhere triggers at the end of the install).
+  echo "require-sigs = false" >> /etc/nix/nix.conf
+  systemctl restart nix-daemon
+
   nix --extra-experimental-features 'nix-command flakes' \
     run github:nix-community/nixos-anywhere -- \
     --flake github:xxLYNX/nebula#testbed \
     --build-on remote \
-    --option require-sigs false \
     root@localhost
   ```
   - `--build-on remote` builds the Nix closure on the live ISO itself (Nix is already present). This works correctly from Windows operator machines where Nix is unavailable.
-  - `--option require-sigs false` must be passed after `--` so nixos-anywhere forwards it to its internal `nix copy` invocations. Passing it before `run` does not work — that only affects the outer `nix run` process.
+  - `require-sigs = false` is required because nixos-anywhere copies unsigned store paths to the target via the nix daemon, which rejects them by default. Passing `--option require-sigs false` to nixos-anywhere does not work — the check happens inside the daemon, not the CLI process.
+  - This edit is safe on a live ISO: it lives only in RAM and is gone when the machine reboots into the installed system.
   - The live ISO needs internet access to fetch the flake from GitHub.
 - After the reboot, SSH into the freshly installed machine with your key.
 
