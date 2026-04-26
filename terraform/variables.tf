@@ -50,19 +50,3 @@ variable "apply_mode" {
   type        = bool
   default     = true
 }
-
-# Outputs to make invocation results discoverable by callers and CI
-output "target_host" {
-  description = "Echoes back the target_host provided to the module."
-  value       = var.target_host
-}
-
-output "ssh_command" {
-  description = "A suggested SSH command to directly open a session to the target using the configured options."
-  value       = "ssh ${var.ssh_options} ${var.target_host}"
-}
-
-output "flake_reference" {
-  description = "The flake path/URL and attribute that will be used by nixos-anywhere (for auditing)."
-  value       = "${var.flake}#${var.flake_attr}"
-}

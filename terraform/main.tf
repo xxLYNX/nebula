@@ -12,15 +12,6 @@
 #  - `flake` defaults to the repository root (\"..\") and `flake_attr` defaults to \"testbed\".
 #  - Keep secrets out of git; use protected CI variables or an external secret store.
 
-terraform {
-  required_providers {
-    nixos-anywhere = {
-      source  = "github.com/nix-community/nixos-anywhere"
-      version = ">= 1.0"
-    }
-  }
-}
-
 module "testbed" {
   source = "github.com/nix-community/nixos-anywhere//terraform/all-in-one"
 
