@@ -41,9 +41,9 @@ variable "deployment_ssh_key" {
 }
 
 variable "build_on_remote" {
-  description = "Build the NixOS closure on the target instead of locally. Useful when running terraform from a non-Linux machine."
+  description = "Build the NixOS closure on the target instead of locally. Defaults to true since the repo is developed on Windows where Nix is not available."
   type        = bool
-  default     = false
+  default     = true
 }
 
 variable "debug_logging" {

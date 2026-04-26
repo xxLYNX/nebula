@@ -1,16 +1,21 @@
 # Terraform wrapper for nixos-anywhere (all-in-one module).
 # This file uses variables declared in variables.tf so nothing is hard-coded.
 #
-# Usage examples:
-#  - terraform init
-#  - terraform plan -var 'target_host=root@192.168.50.224' -var 'ssh_key_path=/home/me/.ssh/id_rsa'
-#  - terraform apply -var 'target_host=root@192.168.50.224' -var 'ssh_key_path=/home/me/.ssh/id_rsa'
+# Prerequisites:
+#   - Target machine booted to NixOS live ISO with sshd running (systemctl start sshd)
+#   - Terraform installed on this machine (Windows/Linux/macOS)
 #
-# Notes:
-#  - Prefer providing `ssh_key_path` (path on the runner). If you must inject key contents from CI,
-#    set `ssh_private_key` (sensitive) and the module will receive it (default null).
-#  - `flake` defaults to the repository root (\"..\") and `flake_attr` defaults to \"testbed\".
-#  - Keep secrets out of git; use protected CI variables or an external secret store.
+# Usage from PowerShell (Windows):
+#   terraform -chdir=G:/nebula/terraform init
+#   $key = Get-Content $env:USERPROFILE\.ssh\id_ed25519 -Raw
+#   terraform -chdir=G:/nebula/terraform apply `
+#     -var="target_host=192.168.50.100" `
+#     -var="install_ssh_key=$key" `
+#     -var="deployment_ssh_key=$key"
+#
+# build_on_remote defaults to true so the NixOS closure is built on the target
+# (the live ISO has Nix), not locally on Windows where Nix is unavailable.
+# nixos_system_attr and nixos_partitioner_attr default to the testbed host.
 
 module "testbed" {
   source = "github.com/nix-community/nixos-anywhere//terraform/all-in-one"
