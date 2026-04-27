@@ -13,15 +13,15 @@
       "locked": {
         "lastModified": 1762034856,
         "narHash": "sha256-QVey3iP3UEoiFVXgypyjTvCrsIlA4ecx6Acaz5C8/PQ=",
-        "ref": "refs/heads/main",
+        "owner": "zhaofengli",
+        "repo": "colmena",
         "rev": "349b035a5027f23d88eeb3bc41085d7ee29f18ed",
-        "revCount": 630,
-        "type": "git",
-        "url": "https://github.com/zhaofengli/colmena"
+        "type": "github"
       },
       "original": {
-        "type": "git",
-        "url": "https://github.com/zhaofengli/colmena"
+        "owner": "zhaofengli",
+        "repo": "colmena",
+        "type": "github"
       }
     },
     "desktop": {
@@ -159,6 +159,22 @@
         "type": "github"
       }
     },
+    "maintenance": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "path": "./modules/maintenance",
+        "type": "path"
+      },
+      "original": {
+        "path": "./modules/maintenance",
+        "type": "path"
+      },
+      "parent": []
+    },
     "nix-github-actions": {
       "inputs": {
         "nixpkgs": [
@@ -201,6 +217,7 @@
         "colmena": "colmena",
         "disko": "disko",
         "home-manager": "home-manager",
+        "maintenance": "maintenance",
         "nixpkgs": "nixpkgs",
         "security-host": "security-host",
         "sops-nix": "sops-nix",
