@@ -1,0 +1,12 @@
+# Normalise line endings to LF on commit for all text files.
+# This prevents the dirty-tree symptom where files edited on Windows (CRLF)
+# appear modified on Linux (LF) after a pull.
+* text=auto eol=lf
+
+# Explicitly mark binary files so git never touches their bytes.
+*.png  binary
+*.jpg  binary
+*.jpeg binary
+*.gif  binary
+*.ico  binary
+*.sqlite binary
