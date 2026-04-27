@@ -158,21 +158,16 @@ Operator-driven remote flow (recommended for testbed / first provisioning)
   ```
 - Still on the live ISO (SSH'd in or at the console), allow unsigned local store paths (required for self-install), then run nixos-anywhere:
   ```bash
-  # Allow unsigned store paths in the live ISO's nix daemon (safe: live ISO is RAM-only,
-  # this is gone after the reboot nixos-anywhere triggers at the end of the install).
-  echo "require-sigs = false" >> /etc/nix/nix.conf
-  systemctl restart nix-daemon
-
-  nix --extra-experimental-features 'nix-command flakes' \
-    run github:nix-community/nixos-anywhere -- \
-    --flake github:xxLYNX/nebula#testbed \
-    --build-on remote \
-    root@localhost
+  nixos-install --flake github:xxLYNX/nebula#testbed --no-root-passwd
+  reboot
   ```
-  - `--build-on remote` builds the Nix closure on the live ISO itself (Nix is already present). This works correctly from Windows operator machines where Nix is unavailable.
-  - `require-sigs = false` is required because nixos-anywhere copies unsigned store paths to the target via the nix daemon, which rejects them by default. Passing `--option require-sigs false` to nixos-anywhere does not work — the check happens inside the daemon, not the CLI process.
-  - This edit is safe on a live ISO: it lives only in RAM and is gone when the machine reboots into the installed system.
+  - Run this **after disko has partitioned and mounted the disk** (see step above).
+  - `nixos-install` builds the closure locally and writes directly to `/mnt` — no SSH copy, no signature verification issues.
+  - `--no-root-passwd` skips the root password prompt; the `voyager` user has `initialPassword = "changeme"` set.
   - The live ISO needs internet access to fetch the flake from GitHub.
+
+  > **Why not nixos-anywhere from the live ISO?**  
+  > nixos-anywhere routes the store copy through SSH even when the target is localhost. The live ISO's nix daemon rejects locally-built paths as unsigned, causing `cannot add path ... because it lacks a signature by a trusted key`. `nixos-install` avoids this entirely. nixos-anywhere is the right tool when deploying *from a remote machine* (e.g. Windows) — not from the live ISO itself.
 - After the reboot, SSH into the freshly installed machine with your key.
 
 Post-install first login
