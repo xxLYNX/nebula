@@ -5,14 +5,9 @@
     # Pinned to a known-good nixpkgs commit for reproducibility
     nixpkgs.url = "github:NixOS/nixpkgs/b86751bc4085f48661017fa226dee99fab6c651b";
 
-    # Colmena — main branch (needed for flake-native features).
-    # hive is an unlocked transitive dep on main; declare it explicitly so
-    # nix won't error with "cannot update unlocked flake input 'hive'".
+    # Colmena — main branch (needed for flake-native features including colmenaHive output).
     colmena.url = "github:zhaofengli/colmena";
     colmena.inputs.nixpkgs.follows = "nixpkgs";
-    colmena.inputs.hive.follows = "hive";
-    hive.url = "github:divnix/hive";
-    hive.inputs.nixpkgs.follows = "nixpkgs";
 
     # Disk tooling
     disko.url = "git+https://github.com/nix-community/disko";
