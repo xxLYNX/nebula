@@ -115,8 +115,10 @@
     # We build each host by wrapping the mkHost module in a proper nixosSystem call.
     nixosConfigurations = builtins.mapAttrs (name: machine:
       nixpkgs.lib.nixosSystem {
-        system = systemFor machine;
-        modules = [ (mkHost name machine) ];
+        modules = [
+          { nixpkgs.hostPlatform = systemFor machine; }
+          (mkHost name machine)
+        ];
         # Make all flake inputs available as module args (same as Colmena's specialArgs above).
         specialArgs = inputs;
       }
