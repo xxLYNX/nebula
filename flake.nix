@@ -115,6 +115,12 @@
   in {
     # Colmena expects a top-level attribute containing a `meta` attr (nixpkgs + specialArgs)
     # and then the host entries. We compose that by merging `meta` with our `hosts` map.
+    #
+    # NOTE: The `colmena` attribute below is the *hive configuration* (legacy output name).
+    # The `colmenaHive` attribute wraps it via `colmena.lib.makeHive` — this is the output
+    # that modern colmena (main branch, Nix 2.21+ pure mode) actually reads by default.
+    # The legacy `colmena` output requires `--legacy-flake-eval` on Nix 2.21+ and is kept
+    # only as source data for `colmena.lib.makeHive`.
     colmena = {
       meta = {
         # Provide a fixed evaluation of nixpkgs for the colmena build environment
@@ -123,6 +129,10 @@
         specialArgs = inputs;
       };
     } // hosts;
+
+    # colmenaHive is the output that colmena main branch reads by default (Nix 2.21+ pure mode).
+    # It wraps the `colmena` hive configuration above via colmena.lib.makeHive.
+    colmenaHive = colmena.lib.makeHive self.outputs.colmena;
 
     # nixosConfigurations must hold nixpkgs.lib.nixosSystem results so that
     # `nix build .#nixosConfigurations.<host>.config.system.build.toplevel` works.
