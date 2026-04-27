@@ -8,5 +8,8 @@
 secrets/
 *.age
 
+# Local reference configs (not part of the managed flake)
+pluto-config/
+
 # Nix
 result
