@@ -23,11 +23,11 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
     testing = {
-      url = "path:./profiles/roles/testing";
+      url = "path:./roles/testing";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     security-host = {
-      url = "path:./profiles/roles/security-host";
+      url = "path:./modules/security-host";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
