@@ -71,12 +71,12 @@ Check off items as they are migrated into a module or role.
 ---
 
 ## Theming / Appearance
-- [ ] GTK dark theme — `programs.gtk` with Adwaita-dark
-- [ ] Qt theming — `qt.enable`, `qt.platformTheme = "gnome"`, `qt.style = "adwaita-dark"`
-- [ ] dconf dark mode — `dconf.settings."org/gnome/desktop/interface"`
-- [ ] Bibata cursor — `home.pointerCursor` with `bibata-cursors`, size 24
-- [ ] Session variables: `XCURSOR_THEME`, `XCURSOR_SIZE`, `HYPRCURSOR_THEME`, `HYPRCURSOR_SIZE`
-- [ ] Packages: `gnome-themes-extra`, `adwaita-icon-theme`, `bibata-cursors`
+- [x] GTK dark theme — `programs.gtk` with Adwaita-dark *(in desktop homeManagerModules)*
+- [x] Qt theming — `qt.enable`, `qt.platformTheme = "gnome"`, `qt.style = "adwaita-dark"` *(in desktop nixosModules)*
+- [x] dconf dark mode — `dconf.settings."org/gnome/desktop/interface"` *(in desktop homeManagerModules)*
+- [x] Bibata cursor — `home.pointerCursor` with `bibata-cursors`, size 24 *(in desktop homeManagerModules)*
+- [x] Session variables: `XCURSOR_THEME`, `XCURSOR_SIZE`, `HYPRCURSOR_THEME`, `HYPRCURSOR_SIZE` *(in desktop homeManagerModules)*
+- [x] Packages: `gnome-themes-extra`, `adwaita-icon-theme`, `bibata-cursors`, `adwaita-qt`, `adwaita-qt6` *(in desktop nixosModules)*
 
 ---
 

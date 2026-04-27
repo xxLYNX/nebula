@@ -109,6 +109,36 @@
               description = "If set and homeManager.exposeHyprConfig is true, used as the home-manager source for ~/.config/hypr/hyprland.conf (e.g. ../hypr/hyprland.conf).";
             };
           };
+
+          theme = {
+            enable = lib.mkOption {
+              type    = lib.types.bool;
+              default = true;
+              description = "Apply the desktop theme (GTK, Qt, cursor, dark mode). Disable to manage theming yourself.";
+            };
+            name = lib.mkOption {
+              type    = lib.types.str;
+              default = "adwaita-dark";
+              description = "Theme variant to apply. Currently only adwaita-dark is bundled.";
+            };
+            cursor = {
+              package = lib.mkOption {
+                type    = lib.types.package;
+                default = pkgs.bibata-cursors;
+                description = "Cursor theme package.";
+              };
+              name = lib.mkOption {
+                type    = lib.types.str;
+                default = "Bibata-Modern-Classic";
+                description = "Cursor theme name.";
+              };
+              size = lib.mkOption {
+                type    = lib.types.int;
+                default = 24;
+                description = "Cursor size in pixels.";
+              };
+            };
+          };
         };
       };
 
@@ -159,6 +189,23 @@
           };
         };
 
+        # Qt theming (system-level — affects all Qt apps fleet-wide)
+        qt = lib.mkIf (cfg.theme.enable or true) {
+          enable = true;
+          platformTheme = "gnome";
+          style = "adwaita-dark";
+        };
+
+        # Theme packages needed at the system level
+        environment.systemPackages = lib.mkIf (cfg.theme.enable or true)
+          (lib.lists.unique ([
+            pkgs.adwaita-qt
+            pkgs.adwaita-qt6
+            pkgs.gnome-themes-extra
+            pkgs.adwaita-icon-theme
+            (cfg.theme.cursor.package or pkgs.bibata-cursors)
+          ] ++ lib.lists.unique (cfg.packages or defaultPackages)));
+
         # Helpful defaults
         security.sudo.wheelNeedsPassword = lib.mkDefault true;
 
@@ -179,9 +226,13 @@
     let
       bundledHypr = ./hypr/hyprland.conf;
       hmCfg = config.homeManager.desktop or {};
+      themeCfg = hmCfg.theme or {};
       hyprSource = if (hmCfg.hyprConfigSource or null) != null
                    then hmCfg.hyprConfigSource
                    else bundledHypr;
+      cursorPkg  = themeCfg.cursor.package or pkgs.bibata-cursors;
+      cursorName = themeCfg.cursor.name    or "Bibata-Modern-Classic";
+      cursorSize = themeCfg.cursor.size    or 24;
     in {
       options.homeManager.desktop = {
         enable = lib.mkOption {
@@ -199,6 +250,30 @@
           default = [];
           description = "Extra packages to install in the user's home environment.";
         };
+        theme = {
+          enable = lib.mkOption {
+            type    = lib.types.bool;
+            default = true;
+            description = "Apply GTK theme, cursor, dconf dark mode, and Hyprland cursor env vars.";
+          };
+          cursor = {
+            package = lib.mkOption {
+              type    = lib.types.package;
+              default = pkgs.bibata-cursors;
+              description = "Cursor theme package.";
+            };
+            name = lib.mkOption {
+              type    = lib.types.str;
+              default = "Bibata-Modern-Classic";
+              description = "Cursor theme name (must match a theme inside cursor.package).";
+            };
+            size = lib.mkOption {
+              type    = lib.types.int;
+              default = 24;
+              description = "Cursor size in pixels.";
+            };
+          };
+        };
       };
 
       config = lib.mkIf (hmCfg.enable or false) {
@@ -212,6 +287,55 @@
         home.packages = lib.lists.unique
           ((hmCfg.extraHomePackages or []) ++ [ pkgs.dunst pkgs.wl-clipboard ]);
         programs.fuzzel.enable = lib.mkDefault true;
+
+        # ── Theming ───────────────────────────────────────────────────────────
+        # All theme config is home-manager-level so it writes to user dotfiles
+        # and env vars rather than system-wide paths.
+        gtk = lib.mkIf (themeCfg.enable or true) {
+          enable = true;
+          theme = {
+            name    = "Adwaita-dark";
+            package = pkgs.gnome-themes-extra;
+          };
+          iconTheme = {
+            name    = "Adwaita";
+            package = pkgs.adwaita-icon-theme;
+          };
+          cursorTheme = {
+            name    = cursorName;
+            package = cursorPkg;
+            size    = cursorSize;
+          };
+        };
+
+        # dconf sets the system-wide GNOME/GTK color-scheme preference.
+        # Apps that respect XDG color-scheme (Firefox, GTK4 apps, etc.) go dark.
+        dconf = lib.mkIf (themeCfg.enable or true) {
+          enable = true;
+          settings."org/gnome/desktop/interface" = {
+            color-scheme = "prefer-dark";
+            gtk-theme    = "Adwaita-dark";
+            icon-theme   = "Adwaita";
+            cursor-theme = cursorName;
+            cursor-size  = cursorSize;
+          };
+        };
+
+        # Cursor for Wayland/X11 and Hyprland specifically.
+        home.pointerCursor = lib.mkIf (themeCfg.enable or true) {
+          gtk.enable = true;
+          package    = cursorPkg;
+          name       = cursorName;
+          size       = cursorSize;
+        };
+
+        # Session env vars — Hyprland reads HYPRCURSOR_* to set cursor in the compositor.
+        home.sessionVariables = lib.mkIf (themeCfg.enable or true) {
+          XCURSOR_THEME    = cursorName;
+          XCURSOR_SIZE     = builtins.toString cursorSize;
+          HYPRCURSOR_THEME = cursorName;
+          HYPRCURSOR_SIZE  = builtins.toString cursorSize;
+        };
       };
     };
 
