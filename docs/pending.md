@@ -135,6 +135,16 @@ Check off items as they are migrated into a module or role.
 
 ---
 
+## Security Hardening (testing role concessions)
+These are intentional shortcuts in `profiles/roles/testing/flake.nix` that must be
+addressed before any machine graduates out of the testing role.
+
+- [ ] `password = "changeme"` — plaintext known password; replace with `sops`-encrypted `hashedPasswordFile`
+- [ ] `security.sudo.wheelNeedsPassword = false` — passwordless root for wheel; require password or restrict to specific commands in production roles
+- [ ] `services.openssh.enable = true` with no `authorizedKeys` — SSH is open but password auth is the only option; add key-only auth (`PasswordAuthentication = false`) and pre-populate `authorizedKeys`
+
+---
+
 ## Roles / Profiles Not Yet Ported
 - [ ] `security-host` role — SOPS secrets (`sops-nix`), `secrets/secrets.yaml`, age key at `/var/lib/sops-nix/key.txt`
 - [ ] `util-host` role — obsidian, syncthing (with `openDefaultPorts`)

@@ -93,6 +93,13 @@
         stalled-download-timeout = 90;
         connect-timeout         = 5;
         download-attempts       = 5;
+        # Colmena binary cache — set in system config so the daemon trusts it without
+        # needing trusted-users. Avoids recompiling colmena from source on future applies.
+        substituters            = [ "https://cache.nixos.org" "https://colmena.cachix.org" ];
+        trusted-public-keys     = [
+          "cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY="
+          "colmena.cachix.org-1:7BzpDnjjH8ki2CT3f6GdOk7QAzPOl+1t3LvTLXqYcSg="
+        ];
       };
 
       # Automatically collect old generations weekly; never keep more than 30 days worth.
@@ -103,9 +110,9 @@
         options   = "--delete-older-than 30d";
       };
 
-      # Minimal packages for testing/dev machines
-      # colmena included so `sudo colmena apply-local` works directly on the host.
-      environment.systemPackages = with pkgs; [ git curl colmena ];
+      # Minimal packages for testing/dev machines.
+      # colmena is pinned via mkHost in the root flake (matches flake input version).
+      environment.systemPackages = with pkgs; [ git curl ];
 
       # Enable the desktop module by default for the testing role
       services.desktop = {
