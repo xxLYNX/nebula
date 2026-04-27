@@ -8,7 +8,8 @@
       "packs": ["testing"],
       "tags": ["testing"],
       "swapSize": "8G",
-      "diskDevice": "/dev/sda"
+      "diskDevice": "/dev/sda",
+      "deployTarget": "testbed"
     }
   }
 }

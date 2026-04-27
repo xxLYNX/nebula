@@ -78,7 +78,8 @@
       nixpkgs.config.allowUnfree = true;
 
       # Minimal packages for testing/dev machines
-      environment.systemPackages = with pkgs; [ git curl ];
+      # colmena included so `sudo colmena apply-local` works directly on the host.
+      environment.systemPackages = with pkgs; [ git curl colmena ];
 
       # Enable the desktop module by default for the testing role
       services.desktop = {
@@ -90,6 +91,19 @@
         };
         displayManager.enable = true;
       };
+
+      # SSH daemon — needed for remote `colmena apply`. Not required for apply-local.
+      # To enable passwordless remote deployment add your SSH public key via:
+      #   users.users.${primaryUser}.openssh.authorizedKeys.keys = [ "ssh-ed25519 AAAA..." ];
+      services.openssh.enable = true;
+
+      # Passwordless sudo for wheel members — lets colmena escalate without prompts.
+      # Acceptable on a test/dev machine; harden for production roles.
+      security.sudo.wheelNeedsPassword = false;
+
+      # Avahi/mDNS — resolves bare hostnames (e.g. "testbed") on the LAN so colmena
+      # can reach this machine by name rather than requiring a hardcoded IP.
+      services.avahi = { enable = true; nssmdns4 = true; openFirewall = true; };
 
       # Wire the desktop home-manager module for the primary user so that
       # ~/.config/hypr/hyprland.conf is managed from the repo rather than

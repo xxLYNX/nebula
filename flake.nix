@@ -65,9 +65,28 @@
       networking.hostName = machine.hostname;
     };
 
-    # Build a map of raw NixOS module attrsets keyed by host name.
-    # Used directly by Colmena (which expects NixOS modules, not lib.nixosSystem results).
-    hosts = builtins.mapAttrs mkHost inventory.machines;
+    # Colmena host wrapper: extends mkHost with deployment.* options.
+    # These options are injected by Colmena's own module system and MUST NOT appear in
+    # nixosConfigurations (which doesn't load that module) or evaluation will error.
+    mkColmenaHost = name: machine: {
+      imports = [ (mkHost name machine) ];
+      deployment = {
+        # SSH address — set deployTarget in inventory/machines.json (hostname or IP).
+        # Avahi/mDNS is enabled in the testing role so bare hostnames resolve on LAN.
+        targetHost           = machine.deployTarget or machine.hostname;
+        targetUser           = machine.primaryUser;
+        tags                 = machine.tags or [];
+        # Allows `colmena apply-local` to be run directly on the target machine itself.
+        # Useful when deploying from testbed (no remote Nix host required).
+        allowLocalDeployment = true;
+        # Build the closure on the target; avoids needing a local Nix store.
+        buildOnTarget        = true;
+      };
+    };
+
+    # Colmena host map — uses mkColmenaHost so deployment.* options are present.
+    # nixosConfigurations (below) calls mkHost directly, stays free of Colmena options.
+    hosts = builtins.mapAttrs mkColmenaHost inventory.machines;
 
     # Map inventory platform string to a Nix system string.
     systemFor = machine:

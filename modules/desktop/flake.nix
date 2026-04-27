@@ -160,7 +160,7 @@
         };
 
         # Helpful defaults
-        security.sudo.wheelNeedsPassword = true;
+        security.sudo.wheelNeedsPassword = lib.mkDefault true;
 
         # Expose a small set of session variables recommended for Wayland/Hyprland
         environment.sessionVariables = {
