@@ -5,13 +5,10 @@
     # Pinned to a known-good nixpkgs commit for reproducibility
     nixpkgs.url = "github:NixOS/nixpkgs/b86751bc4085f48661017fa226dee99fab6c651b";
 
-    # Colmena — pinned to a specific release so transitive unlocked inputs
-    # (e.g. hive) don't cause "cannot update unlocked flake input" in pure mode.
-    colmena.url = "github:zhaofengli/colmena/v0.5.2";
+    # Colmena — pinned to latest stable release to avoid unlocked transitive
+    # inputs (hive etc.) from the development branch causing pure-mode errors.
+    colmena.url = "github:zhaofengli/colmena/v0.4.0";
     colmena.inputs.nixpkgs.follows = "nixpkgs";
-    colmena.inputs.hive.follows = "hive";
-    hive.url = "github:divnix/hive";
-    hive.inputs.nixpkgs.follows = "nixpkgs";
 
     # Disk tooling
     disko.url = "git+https://github.com/nix-community/disko";
