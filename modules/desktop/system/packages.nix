@@ -4,17 +4,7 @@
 { config, pkgs, lib, ... }:
 let
   cfg = config.services.desktop or {};
-  defaultPackages = with pkgs; [
-    hyprland
-    xdg-desktop-portal-hyprland
-    kitty
-    dunst
-    wl-clipboard
-    fuzzel
-    wev
-    mpv
-  ];
 in
 lib.mkIf (cfg.enable or false) {
-  environment.systemPackages = lib.lists.unique (cfg.packages or defaultPackages);
+  environment.systemPackages = lib.lists.unique cfg.packages;
 }

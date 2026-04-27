@@ -5,7 +5,7 @@
 let
   cfg = config.services.desktop or {};
 in
-lib.mkIf (cfg.enable or false) {
+lib.mkIf ((cfg.enable or false) && (cfg.theme.enable or true)) {
   # Qt theming (system-level — affects all Qt apps)
   qt = {
     enable        = true;
