@@ -327,7 +327,9 @@
         };
 
         # Session env vars — Hyprland reads HYPRCURSOR_* to set cursor in the compositor.
+        # GTK_THEME forces all GTK apps (including fuzzel) to use the dark variant.
         home.sessionVariables = lib.mkIf (themeCfg.enable or true) {
+          GTK_THEME        = "Adwaita:dark";
           XCURSOR_THEME    = cursorName;
           XCURSOR_SIZE     = builtins.toString cursorSize;
           HYPRCURSOR_THEME = cursorName;

@@ -73,6 +73,8 @@
       # Bootloader (systemd-boot for UEFI; disko creates the EFI partition at /boot)
       boot.loader.systemd-boot.enable = true;
       boot.loader.efi.canTouchEfiVariables = true;
+      # Show up to 30 generations in the boot menu so you can roll back if needed.
+      boot.loader.systemd-boot.configurationLimit = 30;
       # Show the generation menu for 5 s on boot so you can roll back if needed.
       # Without this systemd-boot boots the latest generation immediately (timeout = 0).
       boot.loader.timeout = 5;
@@ -81,7 +83,25 @@
       nixpkgs.config.allowUnfree = true;
 
       # Enable flakes and the new nix CLI globally so no --extra-experimental-features flag is needed.
-      nix.settings.experimental-features = [ "nix-command" "flakes" ];
+      # Additional settings mitigate the Nix interrupted-download store corruption bug (known since 2021):
+      # stalled-download-timeout aborts stalled transfers before partial data is committed;
+      # connect-timeout prevents hangs on unreachable substituters;
+      # download-attempts retries transient failures automatically.
+      nix.settings = {
+        experimental-features   = [ "nix-command" "flakes" ];
+        http-connections        = 50;
+        stalled-download-timeout = 90;
+        connect-timeout         = 5;
+        download-attempts       = 5;
+      };
+
+      # Automatically collect old generations weekly; never keep more than 30 days worth.
+      # Combined with configurationLimit = 30 this keeps the store and /boot entries bounded.
+      nix.gc = {
+        automatic = true;
+        dates     = "weekly";
+        options   = "--delete-older-than 30d";
+      };
 
       # Minimal packages for testing/dev machines
       # colmena included so `sudo colmena apply-local` works directly on the host.

@@ -38,6 +38,11 @@
             default = true;
             description = "Set zen-browser as the system default browser via xdg-utils.";
           };
+          duckDuckGo = lib.mkOption {
+            type    = lib.types.bool;
+            default = true;
+            description = "Set DuckDuckGo as the default search engine via enterprise policy.";
+          };
         };
       };
 
@@ -58,6 +63,19 @@
         };
 
         environment.sessionVariables.BROWSER = lib.mkIf config.services.webUtils.zenBrowser.setDefault "zen";
+
+        # DuckDuckGo as default search engine via Firefox enterprise policy.
+        # Zen-browser (Firefox-based) reads policies from /etc/zen/policies/policies.json.
+        environment.etc."zen/policies/policies.json" = lib.mkIf config.services.webUtils.zenBrowser.duckDuckGo {
+          text = builtins.toJSON {
+            policies = {
+              DefaultSearchProviderEnabled = true;
+              DefaultSearchProviderName    = "DuckDuckGo";
+              DefaultSearchProviderSearchURL = "https://duckduckgo.com/?q={searchTerms}";
+              DefaultSearchProviderSuggestURL = "https://ac.duckduckgo.com/ac/?q={searchTerms}&type=list";
+            };
+          };
+        };
       };
     };
 
