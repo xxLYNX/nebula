@@ -143,9 +143,6 @@
       };
 
       config = lib.mkIf cfg.enable {
-        # Ensure the requested set of system packages is installed.
-        environment.systemPackages = lib.lists.unique (cfg.packages or defaultPackages);
-
         # Hyprland wiring
         programs.hyprland = lib.mkIf (cfg.hyprland.enable or true) {
           enable = true;
