@@ -14,12 +14,12 @@ Assumptions
   - `flake.nix` at repo root
   - `inventory/machines.json`
   - `nixosConfigurations` exported by the flake (via `nixosConfigurations.<host>`)
+  - `colmenaHive` output generated via `colmena.lib.makeHive` (used by `colmena apply-local`)
   - `secrets/` with SOPS-encrypted files (e.g., `.yaml.enc`) and public recipients recorded
-  - `colmena` config exposed in the flake outputs (see `flake.nix`)
   - `modules/` with reusable packaged modules; `profiles/roles/` that compose `modules/`
 
 Repository layout (relevant paths)
-- `flake.nix` - root flake; exports `colmena` and `nixosConfigurations`.
+- `flake.nix` - root flake; exports `colmenaHive` (via `colmena.lib.makeHive`), `colmena` (raw hive data, kept as source), and `nixosConfigurations`.
 - `inventory/machines.json` - single source-of-truth for host-level metadata (hostname, primaryUser, modules, tags, diskDevice, swapSize, role, env).
 - `profiles/roles/<role>/flake.nix` - role flakes which accept `_module.args` (top-level flake passes `primaryUser` and `machine`).
 - `modules/*` - reusable modules which provide service wiring (e.g., `security-host`).
@@ -83,62 +83,43 @@ Bootstrapping the first device (local Colmena flow)
 This is the recommended flow to get a laptop up-to-date with the monorepo configuration for the first time.
 
 High-level options
-- Option A — Local-first (recommended for single-device bootstrap): boot the device, install minimal NixOS, clone the repo on the device, mount USB and run `colmena` locally or `nixos-rebuild switch`.
-- Option B — Operator-driven (from your workstation): boot device, make it reachable via SSH, operator runs Terraform/`nixos-anywhere` or Colmena to push config remotely (must have the private key available to the operator at that time).
+- **Option A — USB-local (recommended)**: boot device from NixOS ISO, plug in the USB containing the repo, use disko + nixos-install directly from the USB. No internet needed for the flake itself — only binary substituters.
+- **Option B — Operator-driven (remote)**: boot device, make it reachable via SSH, operator deploys from their workstation using nixos-anywhere or Colmena remotely.
 
-Detailed local-first steps (Option A)
-1. Boot the target machine from a NixOS ISO (or use another installer flow).
-2. Partition & format the disk. You can use `disko` in your flake, or manual commands. If using `disko`, you can generate the filesystem and then `nixos-install` into it. Example (manual minimal flow):
-```/dev/null/manual-install-steps.sh#L1-40
-# Boot from NixOS ISO, open shell
-# Partition /dev/sda (example using parted)
-sudo parted -s /dev/sda mklabel gpt
-sudo parted -s /dev/sda mkpart primary 1MiB 513MiB
-sudo parted -s /dev/sda mkpart primary 513MiB 100%
-# Format: boot as FAT, root as ext4 or xfs
-sudo mkfs.vfat -F32 /dev/sda1
-sudo mkfs.xfs /dev/sda2
-# Mount and install
-sudo mount /dev/sda2 /mnt
-sudo mkdir -p /mnt/boot
-sudo mount /dev/sda1 /mnt/boot
-# Copy a minimal config (or use your flake)
+Detailed USB-local steps (Option A — verified working flow)
+1. Boot the target machine from a NixOS ISO.
+2. Plug in USB H (the USB containing a clone of this repo).
+3. Find the USB mount point and cd into the repo:
+```bash
+lsblk
+ls /run/media/nixos/         # find the label
+cd /run/media/nixos/<label>/nebula
+
+# Verify it's clean and matches what was pushed from Windows
+git log --oneline -3
+git status
 ```
-3. Install a minimal NixOS system if needed, or keep the live environment and operate directly from it.
-4. Clone the repo on the device:
-```/dev/null/clone-repo.sh#L1-4
-git clone <your-repo-url> /root/repo
-cd /root/repo
+4. Partition, format and mount the target disk via disko (**wipes the disk**):
+```bash
+sudo nix --extra-experimental-features "nix-command flakes" \
+  run github:nix-community/disko/latest -- \
+  --mode destroy,format,mount \
+  --flake .#testbed
 ```
-5. Mount the USB and expose the private key to SOPS/age:
-```/dev/null/mount-usb-and-key.sh#L1-12
-# Mount LUKS USB (example)
-sudo cryptsetup luksOpen /dev/sdX secret-usb
-sudo mount /dev/mapper/secret-usb /mnt/secret-usb
-export SOPS_AGE_KEY_FILE=/mnt/secret-usb/age_key.txt
-# Alternatively, copy to /root/.config/sops/age_key.txt with strict permissions
+5. Install the system closure:
+```bash
+sudo nixos-install --flake .#testbed --no-root-password
 ```
-6. Verify you can decrypt a secret (sanity check):
-```/dev/null/sops-decrypt-check.sh#L1-6
-sops --decrypt ./secrets/example.yaml.enc > /tmp/example.yaml
-# inspect, then securely delete
-shred -u /tmp/example.yaml
-```
-7. Use Colmena locally to apply the host configuration from the repo:
-   - Your root flake should export the `colmena` set. From the repo root:
-```/dev/null/colmena-local-apply.sh#L1-12
-# build colmena target for this host
-nix build .#colmena.<YOUR_HOST>
-# or run colmena directly if available
-# Example: colmena apply -c ./colmena -p <profile> --no-ssh (local)
-# If using nixos-rebuild directly:
-sudo nixos-rebuild switch --flake .#nixosConfigurations.<this-host>
+6. Reboot:
+```bash
+sudo reboot
 ```
 Notes:
-- If your NixOS install expects secrets to be present at build time (e.g., sops-nix decrypt), ensure `SOPS_AGE_KEY_FILE` or appropriate environment is set for `nix build`.
-- Keep decrypted artifacts in tmpfs and remove them after the build completes.
+- `--no-root-password` skips the root password prompt; the `voyager` user has `password = "changeme"` set.
+- The `flake.lock` is committed in the repo so no `--no-write-lock-file` flag is needed.
+- Using `.#testbed` (local USB path) means the flake itself is not fetched from the internet — only binary substituters (cache.nixos.org, colmena.cachix.org) need network.
 
-Operator-driven remote flow (recommended for testbed / first provisioning)
+Operator-driven remote flow (Option B — for when the target is already network-reachable)
 - Boot the target machine from a NixOS live ISO.
 - On the live ISO:
   ```bash
@@ -156,26 +137,31 @@ Operator-driven remote flow (recommended for testbed / first provisioning)
   # PowerShell (Windows)
   type $env:USERPROFILE\.ssh\id_ed25519.pub | ssh root@<TARGET_IP> "mkdir -p ~/.ssh && cat >> ~/.ssh/authorized_keys"
   ```
-- Still on the live ISO (SSH'd in or at the console), partition the disk with disko then install:
+- Still on the live ISO (SSH'd in or at the console), cd to the repo on your USB then partition and install:
   ```bash
-  # 1. Partition and mount the disk
-  nix --extra-experimental-features 'nix-command flakes' \
-    run github:nix-community/disko -- \
+  # USB is mounted at e.g. /run/media/nixos/<label>/nebula
+  cd /run/media/nixos/<label>/nebula
+
+  # Verify it's clean and up to date
+  git log --oneline -3
+  git status
+
+  # 1. Partition, format and mount via disko (WIPES the target disk)
+  sudo nix --extra-experimental-features "nix-command flakes" \
+    run github:nix-community/disko/latest -- \
     --mode destroy,format,mount \
-    --flake github:xxLYNX/nebula#testbed \
-    --no-write-lock-file
+    --flake .#testbed
 
-  # 2. Build and install the system closure
-  nixos-install --flake github:xxLYNX/nebula#testbed --no-root-passwd --no-write-lock-file
+  # 2. Install the system closure from the local flake
+  sudo nixos-install --flake .#testbed --no-root-password
 
-  reboot
+  sudo reboot
   ```
-  - `nixos-install` builds the closure locally and writes directly to `/mnt` — no SSH copy, no signature verification issues.
-  - `--no-write-lock-file` is required because the flake has no committed `flake.lock` yet (Nix can't write it back to the read-only GitHub-fetched source).
-  - `--no-root-passwd` skips the root password prompt; the `voyager` user has `password = "changeme"` set.
-  - The live ISO needs internet access to fetch the flake from GitHub.
+  - Using `.#testbed` (local USB path) avoids needing internet for the flake fetch — only binary substituters need network.
+  - `--no-root-password` skips the root password prompt; the `voyager` user has `password = "changeme"` set.
+  - The `flake.lock` is committed in the repo so `--no-write-lock-file` is not needed.
 
-  > **Why not nixos-anywhere from the live ISO?**  
+  > **Why not `nixos-anywhere` from the live ISO?**  
   > nixos-anywhere routes the store copy through SSH even when the target is localhost. The live ISO's nix daemon rejects locally-built paths as unsigned, causing `cannot add path ... because it lacks a signature by a trusted key`. `nixos-install` avoids this entirely. nixos-anywhere is the right tool when deploying *from a remote machine* (e.g. Windows) — not from the live ISO itself.
 - After the reboot, SSH into the freshly installed machine with your key.
 
@@ -189,9 +175,10 @@ Post-install first login
 Applying config changes to a running machine
 - For config updates after the initial install, no reinstall is needed. On the target machine:
   ```bash
-  sudo nixos-rebuild switch --flake github:xxLYNX/nebula#testbed --no-write-lock-file
+  git pull
+  colmena apply-local --sudo
   ```
-  This applies NixOS and home-manager changes (including `~/.config/hypr/hyprland.conf`) in-place.
+  The pinned colmena binary is part of the system closure from day one, so this always matches the `colmenaHive` schema version in the flake.
 
 Terraform (alternative / future use)
 - The `terraform/` directory wraps nixos-anywhere in HCL for structured state tracking.
@@ -242,14 +229,15 @@ Quick contributor guides
      "modules": ["testing"],
      "tags": ["testing"],
      "swapSize": "8G",
-     "diskDevice": "/dev/sda"
+     "diskDevice": "/dev/sda",
+     "deployTarget": "myhostname"
    }
    ```
    - `modules` must match flake input names declared in the root `flake.nix` inputs.
 2. Create `hosts/myhostname/configuration.nix` (copy from `hosts/testbed/`).
 3. Create `hosts/myhostname/hardware-configuration.nix` — nixos-anywhere generates this automatically on first deploy; leave it as `{ ... }: { }` until then.
 4. If using a new role, add it to `profiles/roles/<role>/flake.nix` and register it as an input in the root `flake.nix`.
-5. Commit and push. Deploy using the nixos-anywhere method above.
+5. Commit and push. Deploy using the USB-local method (Option A) above, or the operator-driven remote flow if the machine is already reachable via SSH.
 
 ## Adding a new NixOS module (system-level)
 
