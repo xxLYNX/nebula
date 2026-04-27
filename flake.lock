@@ -1,0 +1,280 @@
+{
+  "nodes": {
+    "colmena": {
+      "inputs": {
+        "flake-compat": "flake-compat",
+        "flake-utils": "flake-utils",
+        "nix-github-actions": "nix-github-actions",
+        "nixpkgs": [
+          "nixpkgs"
+        ],
+        "stable": "stable"
+      },
+      "locked": {
+        "lastModified": 1762034856,
+        "narHash": "sha256-QVey3iP3UEoiFVXgypyjTvCrsIlA4ecx6Acaz5C8/PQ=",
+        "ref": "refs/heads/main",
+        "rev": "349b035a5027f23d88eeb3bc41085d7ee29f18ed",
+        "revCount": 630,
+        "type": "git",
+        "url": "https://github.com/zhaofengli/colmena"
+      },
+      "original": {
+        "type": "git",
+        "url": "https://github.com/zhaofengli/colmena"
+      }
+    },
+    "desktop": {
+      "inputs": {
+        "home-manager": "home-manager_2",
+        "nixpkgs": [
+          "testing",
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "path": "../../../modules/desktop",
+        "type": "path"
+      },
+      "original": {
+        "path": "../../../modules/desktop",
+        "type": "path"
+      },
+      "parent": [
+        "testing"
+      ]
+    },
+    "disko": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1776613567,
+        "narHash": "sha256-gC9Cp5ibBmGD5awCA9z7xy6MW6iJufhazTYJOiGlCUI=",
+        "ref": "refs/heads/master",
+        "rev": "32f4236bfc141ae930b5ba2fb604f561fed5219d",
+        "revCount": 1359,
+        "type": "git",
+        "url": "https://github.com/nix-community/disko"
+      },
+      "original": {
+        "type": "git",
+        "url": "https://github.com/nix-community/disko"
+      }
+    },
+    "flake-compat": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1650374568,
+        "narHash": "sha256-Z+s0J8/r907g149rllvwhb4pKi8Wam5ij0st8PwAh+E=",
+        "owner": "edolstra",
+        "repo": "flake-compat",
+        "rev": "b4a34015c698c7793d592d66adbab377907a2be8",
+        "type": "github"
+      },
+      "original": {
+        "owner": "edolstra",
+        "repo": "flake-compat",
+        "type": "github"
+      }
+    },
+    "flake-utils": {
+      "locked": {
+        "lastModified": 1659877975,
+        "narHash": "sha256-zllb8aq3YO3h8B/U0/J1WBgAL8EX5yWf5pMj3G0NAmc=",
+        "owner": "numtide",
+        "repo": "flake-utils",
+        "rev": "c0e246b9b83f637f4681389ecabcb2681b4f3af0",
+        "type": "github"
+      },
+      "original": {
+        "owner": "numtide",
+        "repo": "flake-utils",
+        "type": "github"
+      }
+    },
+    "home-manager": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1777250669,
+        "narHash": "sha256-lswnQkFAkciQwXO0u23wUVZvq6TABj6Kk/+Po4FJYW4=",
+        "owner": "nix-community",
+        "repo": "home-manager",
+        "rev": "4883af6edbdf222c66edb545d312f4e40030a2be",
+        "type": "github"
+      },
+      "original": {
+        "owner": "nix-community",
+        "repo": "home-manager",
+        "type": "github"
+      }
+    },
+    "home-manager_2": {
+      "inputs": {
+        "nixpkgs": [
+          "testing",
+          "desktop",
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1777250669,
+        "narHash": "sha256-lswnQkFAkciQwXO0u23wUVZvq6TABj6Kk/+Po4FJYW4=",
+        "owner": "nix-community",
+        "repo": "home-manager",
+        "rev": "4883af6edbdf222c66edb545d312f4e40030a2be",
+        "type": "github"
+      },
+      "original": {
+        "owner": "nix-community",
+        "repo": "home-manager",
+        "type": "github"
+      }
+    },
+    "nix-github-actions": {
+      "inputs": {
+        "nixpkgs": [
+          "colmena",
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1729742964,
+        "narHash": "sha256-B4mzTcQ0FZHdpeWcpDYPERtyjJd/NIuaQ9+BV1h+MpA=",
+        "owner": "nix-community",
+        "repo": "nix-github-actions",
+        "rev": "e04df33f62cdcf93d73e9a04142464753a16db67",
+        "type": "github"
+      },
+      "original": {
+        "owner": "nix-community",
+        "repo": "nix-github-actions",
+        "type": "github"
+      }
+    },
+    "nixpkgs": {
+      "locked": {
+        "lastModified": 1776329215,
+        "narHash": "sha256-a8BYi3mzoJ/AcJP8UldOx8emoPRLeWqALZWu4ZvjPXw=",
+        "owner": "NixOS",
+        "repo": "nixpkgs",
+        "rev": "b86751bc4085f48661017fa226dee99fab6c651b",
+        "type": "github"
+      },
+      "original": {
+        "owner": "NixOS",
+        "repo": "nixpkgs",
+        "rev": "b86751bc4085f48661017fa226dee99fab6c651b",
+        "type": "github"
+      }
+    },
+    "root": {
+      "inputs": {
+        "colmena": "colmena",
+        "disko": "disko",
+        "home-manager": "home-manager",
+        "nixpkgs": "nixpkgs",
+        "security-host": "security-host",
+        "sops-nix": "sops-nix",
+        "testing": "testing"
+      }
+    },
+    "security-host": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ],
+        "securityModule": "securityModule"
+      },
+      "locked": {
+        "path": "./profiles/roles/security-host",
+        "type": "path"
+      },
+      "original": {
+        "path": "./profiles/roles/security-host",
+        "type": "path"
+      },
+      "parent": []
+    },
+    "securityModule": {
+      "inputs": {
+        "nixpkgs": [
+          "security-host",
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "path": "../../../modules/security-host",
+        "type": "path"
+      },
+      "original": {
+        "path": "../../../modules/security-host",
+        "type": "path"
+      },
+      "parent": [
+        "security-host"
+      ]
+    },
+    "sops-nix": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1776771786,
+        "narHash": "sha256-DRFGPfFV6hbrfO9a1PH1FkCi7qR5FgjSqsQGGvk1rdI=",
+        "ref": "refs/heads/master",
+        "rev": "bef289e2248991f7afeb95965c82fbcd8ff72598",
+        "revCount": 1208,
+        "type": "git",
+        "url": "https://github.com/Mic92/sops-nix"
+      },
+      "original": {
+        "type": "git",
+        "url": "https://github.com/Mic92/sops-nix"
+      }
+    },
+    "stable": {
+      "locked": {
+        "lastModified": 1750133334,
+        "narHash": "sha256-urV51uWH7fVnhIvsZIELIYalMYsyr2FCalvlRTzqWRw=",
+        "owner": "NixOS",
+        "repo": "nixpkgs",
+        "rev": "36ab78dab7da2e4e27911007033713bab534187b",
+        "type": "github"
+      },
+      "original": {
+        "owner": "NixOS",
+        "ref": "nixos-25.05",
+        "repo": "nixpkgs",
+        "type": "github"
+      }
+    },
+    "testing": {
+      "inputs": {
+        "desktop": "desktop",
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "path": "./profiles/roles/testing",
+        "type": "path"
+      },
+      "original": {
+        "path": "./profiles/roles/testing",
+        "type": "path"
+      },
+      "parent": []
+    }
+  },
+  "root": "root",
+  "version": 7
+}
