@@ -156,14 +156,23 @@ Operator-driven remote flow (recommended for testbed / first provisioning)
   # PowerShell (Windows)
   type $env:USERPROFILE\.ssh\id_ed25519.pub | ssh root@<TARGET_IP> "mkdir -p ~/.ssh && cat >> ~/.ssh/authorized_keys"
   ```
-- Still on the live ISO (SSH'd in or at the console), allow unsigned local store paths (required for self-install), then run nixos-anywhere:
+- Still on the live ISO (SSH'd in or at the console), partition the disk with disko then install:
   ```bash
-  nixos-install --flake github:xxLYNX/nebula#testbed --no-root-passwd
+  # 1. Partition and mount the disk
+  nix --extra-experimental-features 'nix-command flakes' \
+    run github:nix-community/disko -- \
+    --mode destroy,format,mount \
+    --flake github:xxLYNX/nebula#testbed \
+    --no-write-lock-file
+
+  # 2. Build and install the system closure
+  nixos-install --flake github:xxLYNX/nebula#testbed --no-root-passwd --no-write-lock-file
+
   reboot
   ```
-  - Run this **after disko has partitioned and mounted the disk** (see step above).
   - `nixos-install` builds the closure locally and writes directly to `/mnt` — no SSH copy, no signature verification issues.
-  - `--no-root-passwd` skips the root password prompt; the `voyager` user has `initialPassword = "changeme"` set.
+  - `--no-write-lock-file` is required because the flake has no committed `flake.lock` yet (Nix can't write it back to the read-only GitHub-fetched source).
+  - `--no-root-passwd` skips the root password prompt; the `voyager` user has `password = "changeme"` set.
   - The live ISO needs internet access to fetch the flake from GitHub.
 
   > **Why not nixos-anywhere from the live ISO?**  
@@ -171,11 +180,18 @@ Operator-driven remote flow (recommended for testbed / first provisioning)
 - After the reboot, SSH into the freshly installed machine with your key.
 
 Post-install first login
-- The primary user (`voyager` by default) has `initialPassword = "changeme"`. Change it on first login:
+- The primary user (`voyager` by default) has `password = "changeme"`. Change it after first login:
   ```bash
   passwd
   ```
-- For production, replace `initialPassword` with a `sops`-encrypted `hashedPassword`.
+- For production, replace `password` with a `sops`-encrypted `hashedPasswordFile`.
+
+Applying config changes to a running machine
+- For config updates after the initial install, no reinstall is needed. On the target machine:
+  ```bash
+  sudo nixos-rebuild switch --flake github:xxLYNX/nebula#testbed --no-write-lock-file
+  ```
+  This applies NixOS and home-manager changes (including `~/.config/hypr/hyprland.conf`) in-place.
 
 Terraform (alternative / future use)
 - The `terraform/` directory wraps nixos-anywhere in HCL for structured state tracking.
