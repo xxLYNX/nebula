@@ -77,6 +77,9 @@
       # Allow unfree firmware (required by hardware.enableAllFirmware in desktop module)
       nixpkgs.config.allowUnfree = true;
 
+      # Enable flakes and the new nix CLI globally so no --extra-experimental-features flag is needed.
+      nix.settings.experimental-features = [ "nix-command" "flakes" ];
+
       # Minimal packages for testing/dev machines
       # colmena included so `sudo colmena apply-local` works directly on the host.
       environment.systemPackages = with pkgs; [ git curl colmena ];
