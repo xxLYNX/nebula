@@ -5,38 +5,40 @@
 let
   theme = import ../themes/nebula/colors.nix;
   hmCfg = config.homeManager.desktop or {};
-  bg    = "#${theme.background}";
-  fg    = "#${theme.text}";
-  bord  = "#${theme.border}";
+  surface = "#${theme.surface}";
+  fg      = "#${theme.text}";
+  bord    = "#${theme.border}";
+  crit    = "#f38ba8";
 in
 lib.mkIf (hmCfg.enable or false) {
   services.dunst = {
     enable   = true;
     settings = {
       global = {
-        follow      = "mouse";
-        width       = 300;
-        height      = 300;
-        origin      = "top-right";
-        offset      = "10x10";
+        follow       = "keyboard";
+        width        = 300;
+        height       = 300;
+        origin       = "top-right";
+        offset       = "10x10";
         transparency = 10;
-        frame_color = bord;
-        font        = "monospace 10";
+        frame_color  = "#888888";
+        font         = "Monospace 12";
       };
       urgency_low = {
-        background  = bg;
+        background  = surface;
         foreground  = fg;
-        frame_color = bord;
+        timeout     = 10;
       };
       urgency_normal = {
-        background  = bg;
+        background  = surface;
         foreground  = fg;
-        frame_color = bord;
+        timeout     = 10;
       };
       urgency_critical = {
-        background  = bg;
-        foreground  = "#ff5555";
-        frame_color = "#ff5555";
+        background  = crit;
+        foreground  = surface;
+        frame_color = crit;
+        timeout     = 0;
       };
     };
   };

@@ -9,6 +9,7 @@
 {
   # ── Base palette ──────────────────────────────────────────────────────────
   background     = "000000";   backgroundAlpha = "000000f0";
+  surface        = "1e1e2e";   # Catppuccin Mocha base — used for notification/popup backgrounds
   text           = "cdd6f4";   textAlpha       = "cdd6f4ff";
   accent         = "89b4fa";   accentAlpha     = "89b4faff";
   selection      = "45475a";   selectionAlpha  = "45475aff";
