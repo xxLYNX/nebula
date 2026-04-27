@@ -61,6 +61,11 @@
         home-manager.nixosModules.home-manager
       ] ++ (map (mod: inputs.${mod}.nixosModules.default) machine.modules);
 
+      # Set the host platform via the modern NixOS option rather than the deprecated
+      # `system` argument to nixosSystem/Colmena meta. This suppresses the
+      # "'system' has been renamed to nixpkgs.hostPlatform" evaluation warning.
+      nixpkgs.hostPlatform = systemFor machine;
+
       # Pass arguments to modules produced by flakes in `modules`.
       _module.args = {
         inherit inputs;
@@ -116,13 +121,9 @@
 
     # nixosConfigurations must hold nixpkgs.lib.nixosSystem results so that
     # `nix build .#nixosConfigurations.<host>.config.system.build.toplevel` works.
-    # We build each host by wrapping the mkHost module in a proper nixosSystem call.
     nixosConfigurations = builtins.mapAttrs (name: machine:
       nixpkgs.lib.nixosSystem {
-        modules = [
-          { nixpkgs.hostPlatform = systemFor machine; }
-          (mkHost name machine)
-        ];
+        modules = [ (mkHost name machine) ];
         # Make all flake inputs available as module args (same as Colmena's specialArgs above).
         specialArgs = inputs;
       }
