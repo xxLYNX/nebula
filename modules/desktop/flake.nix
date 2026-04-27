@@ -202,7 +202,13 @@
       };
 
       config = lib.mkIf (hmCfg.enable or false) {
-        home.file.".config/hypr/hyprland.conf".source = hyprSource;
+        home.file.".config/hypr/hyprland.conf" = {
+          source = hyprSource;
+          # force = true so home-manager replaces any pre-existing file (e.g. the
+          # auto-generated hyprland.conf from the first Hyprland launch). Without this
+          # hm-activate fails with "Existing file would be clobbered".
+          force = true;
+        };
         home.packages = lib.lists.unique
           ((hmCfg.extraHomePackages or []) ++ [ pkgs.dunst pkgs.wl-clipboard ]);
         programs.fuzzel.enable = lib.mkDefault true;

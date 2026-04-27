@@ -73,6 +73,9 @@
       # Bootloader (systemd-boot for UEFI; disko creates the EFI partition at /boot)
       boot.loader.systemd-boot.enable = true;
       boot.loader.efi.canTouchEfiVariables = true;
+      # Show the generation menu for 5 s on boot so you can roll back if needed.
+      # Without this systemd-boot boots the latest generation immediately (timeout = 0).
+      boot.loader.timeout = 5;
 
       # Allow unfree firmware (required by hardware.enableAllFirmware in desktop module)
       nixpkgs.config.allowUnfree = true;
