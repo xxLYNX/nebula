@@ -59,7 +59,7 @@
         disko.nixosModules.disko
         sops-nix.nixosModules.sops
         home-manager.nixosModules.home-manager
-      ] ++ (map (pack: inputs.${pack}.nixosModules.default) machine.packs);
+      ] ++ (map (mod: inputs.${mod}.nixosModules.default) machine.modules);
 
       # Pass arguments to modules produced by flakes in `packs`.
       _module.args = {

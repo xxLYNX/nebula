@@ -5,7 +5,7 @@
       "primaryUser": "voyager",
       "platform": "linux",
       "role": "testing",
-      "packs": [
+      "modules": [
         "testing",
         "web-utils",
         "maintenance"

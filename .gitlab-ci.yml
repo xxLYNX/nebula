@@ -3,7 +3,7 @@
 #
 # Stages:
 #   lint     — static checks (no secrets, no build required): JSON schema, Terraform fmt/validate, Nix flake check
-#   validate — inventory policy enforcement: role present, tags include role, packs allowed for role
+#   validate — inventory policy enforcement: role present, tags include role, modules allowed for role
 #   build    — Nix host builds: nixosConfigurations.<host>.config.system.build.toplevel
 #   plan     — Terraform plan (dry-run, no apply); only on protected branches / manual trigger
 #
@@ -34,14 +34,14 @@ lint:json:
     - echo "==> Validating inventory/machines.json is valid JSON"
     - jq empty inventory/machines.json
     - echo "==> Checking all machines have required fields (hostname,
-      primaryUser, role, packs)"
+      primaryUser, role, modules)"
     - |
       jq -e '
         .machines | to_entries[] | .value |
         has("hostname") and
         has("primaryUser") and
         has("role") and
-        has("packs")
+        has("modules")
       ' inventory/machines.json
   rules:
     - changes:
@@ -93,25 +93,25 @@ validate:inventory-policy:
       bash -euo pipefail << 'EOF'
       FAIL=0
 
-      # Allowed packs per role. Extend this as new roles/packs are added.
-      # Format: role:pack1,pack2,...
-      ALLOWED_PACKS=(
-        "testing:testing"
-        "desktop:testing,desktop"
-        "server:security-host"
-        "security-host:security-host"
+      # Allowed modules per role. Extend this as new roles/modules are added.
+      # Format: role:module1,module2,...
+      ALLOWED_MODULES=(
+        "testing:testing,web-utils,maintenance"
+        "desktop:testing,desktop,web-utils,maintenance"
+        "server:security-host,maintenance"
+        "security-host:security-host,maintenance"
       )
 
       check_allowed() {
         local role="$1"
-        local pack="$2"
-        for entry in "${ALLOWED_PACKS[@]}"; do
+        local mod="$2"
+        for entry in "${ALLOWED_MODULES[@]}"; do
           r="${entry%%:*}"
-          packs_str="${entry#*:}"
+          modules_str="${entry#*:}"
           if [ "$r" = "$role" ]; then
-            IFS=',' read -ra allowed <<< "$packs_str"
+            IFS=',' read -ra allowed <<< "$modules_str"
             for a in "${allowed[@]}"; do
-              [ "$a" = "$pack" ] && return 0
+              [ "$a" = "$mod" ] && return 0
             done
           fi
         done
@@ -121,7 +121,7 @@ validate:inventory-policy:
       while IFS= read -r machine_name; do
         role=$(jq -r ".machines[\"$machine_name\"].role // empty" inventory/machines.json)
         tags=$(jq -r ".machines[\"$machine_name\"].tags[]" inventory/machines.json 2>/dev/null || true)
-        packs=$(jq -r ".machines[\"$machine_name\"].packs[]" inventory/machines.json 2>/dev/null || true)
+        modules=$(jq -r ".machines[\"$machine_name\"].modules[]" inventory/machines.json 2>/dev/null || true)
 
         # 1. role must be present
         if [ -z "$role" ]; then
@@ -135,15 +135,15 @@ validate:inventory-policy:
           FAIL=1
         fi
 
-        # 3. packs must be allowed for the role
+        # 3. modules must be allowed for the role
         if [ -n "$role" ]; then
-          while IFS= read -r pack; do
-            [ -z "$pack" ] && continue
-            if ! check_allowed "$role" "$pack"; then
-              echo "ERROR: machine '$machine_name' has pack '$pack' which is not allowed for role '$role'"
+          while IFS= read -r mod; do
+            [ -z "$mod" ] && continue
+            if ! check_allowed "$role" "$mod"; then
+              echo "ERROR: machine '$machine_name' has module '$mod' which is not allowed for role '$role'"
               FAIL=1
             fi
-          done <<< "$packs"
+          done <<< "$modules"
         fi
 
         echo "OK: $machine_name (role=$role)"

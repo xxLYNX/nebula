@@ -102,7 +102,7 @@ services.maintenance = {
 };
 ```
 
-All options default to safe/enabled values. Adding `maintenance` to a machine's `packs` in `inventory/machines.json` is all that is needed.
+All options default to safe/enabled values. Adding `maintenance` to a machine's `modules` in `inventory/machines.json` is all that is needed.
 
 ---
 

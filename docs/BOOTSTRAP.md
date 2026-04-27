@@ -20,7 +20,7 @@ Assumptions
 
 Repository layout (relevant paths)
 - `flake.nix` - root flake; exports `colmena` and `nixosConfigurations`.
-- `inventory/machines.json` - single source-of-truth for host-level metadata (hostname, primaryUser, packs/modules, tags, diskDevice, swapSize, role, env).
+- `inventory/machines.json` - single source-of-truth for host-level metadata (hostname, primaryUser, modules, tags, diskDevice, swapSize, role, env).
 - `profiles/roles/<role>/flake.nix` - role flakes which accept `_module.args` (top-level flake passes `primaryUser` and `machine`).
 - `modules/*` - reusable modules which provide service wiring (e.g., `security-host`).
 - `secrets/` - sops-encrypted files (public recipients are in repo, private keys are external).
@@ -220,7 +220,7 @@ Terraform backend & state note
 Checklist before first push to a new machine
 - [ ] Public recipients committed in repo (only public keys).
 - [ ] Private key stored only on encrypted USB or hardware token.
-- [ ] `inventory/machines.json` entry created for the device with correct hostname, packs/modules, primaryUser, diskDevice.
+- [ ] `inventory/machines.json` entry created for the device with correct hostname, modules, primaryUser, diskDevice.
 - [ ] `nixosConfigurations.<host>` available via flake evaluation (`nix build .#nixosConfigurations.<host>.config.system.build.toplevel`) locally.
 - [ ] Decrypt test: `sops --decrypt` works when USB is mounted.
 - [ ] Local `colmena` or `nixos-rebuild` test run on the device succeeds in a dry run (build).
@@ -239,13 +239,13 @@ Quick contributor guides
      "primaryUser": "alice",
      "platform": "linux",
      "role": "testing",
-     "packs": ["testing"],
+     "modules": ["testing"],
      "tags": ["testing"],
      "swapSize": "8G",
      "diskDevice": "/dev/sda"
    }
    ```
-   - `packs` must match flake input names declared in the root `flake.nix` inputs.
+   - `modules` must match flake input names declared in the root `flake.nix` inputs.
 2. Create `hosts/myhostname/configuration.nix` (copy from `hosts/testbed/`).
 3. Create `hosts/myhostname/hardware-configuration.nix` — nixos-anywhere generates this automatically on first deploy; leave it as `{ ... }: { }` until then.
 4. If using a new role, add it to `profiles/roles/<role>/flake.nix` and register it as an input in the root `flake.nix`.
@@ -261,8 +261,8 @@ Quick contributor guides
      inputs.nixpkgs.follows = "nixpkgs";
    };
    ```
-3. Add `"mymodule"` to `packs` for any machine in `inventory/machines.json` that should use it.
-   The root flake's `mkHost` automatically imports `inputs.mymodule.nixosModules.default` for each pack listed.
+3. Add `"mymodule"` to `modules` for any machine in `inventory/machines.json` that should use it.
+   The root flake's `mkHost` automatically imports `inputs.mymodule.nixosModules.default` for each module listed.
 
 ## Adding a home-manager module
 
@@ -292,7 +292,7 @@ Home-manager modules live in `modules/desktop/home-modules/` (for desktop-specif
 
 1. Create `profiles/roles/<role>/flake.nix` exporting `nixosModules.default` as a NixOS module function `{ config, pkgs, primaryUser, machine, ... }: { ... }`.
 2. Register it as a flake input in the root `flake.nix` (same as a module above).
-3. Set `"role": "<role>"` and add the role name to `"packs"` in `inventory/machines.json` for the target machine.
+3. Set `"role": "<role>"` and add the role name to `"modules"` in `inventory/machines.json` for the target machine.
 4. The root flake passes `primaryUser` and `machine` as `_module.args`, so role modules can access per-host data from `machine.diskDevice`, `machine.swapSize`, etc.
 
 Troubleshooting tips

@@ -1,7 +1,7 @@
 # desktop module
 
 **Location:** `modules/desktop/flake.nix`  
-**Pack name:** `desktop` (imported as a role dependency, not directly via packs)  
+**Module name:** `desktop` (imported as a role dependency, not directly via `modules`)  
 **Options namespaces:** `services.desktop` (system), `homeManager.desktop` (home-manager)
 
 ---

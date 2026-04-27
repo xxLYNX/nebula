@@ -62,7 +62,7 @@ services.webUtils = {
 };
 ```
 
-All options default to `true`. Adding `web-utils` to a machine's `packs` in `inventory/machines.json` is all that is needed.
+All options default to `true`. Adding `web-utils` to a machine's `modules` in `inventory/machines.json` is all that is needed.
 
 ---
 
