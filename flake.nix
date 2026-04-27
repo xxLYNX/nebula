@@ -36,6 +36,10 @@
       url = "path:./modules/web-utils";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    maintenance = {
+      url = "path:./modules/maintenance";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs = { self, nixpkgs, colmena, disko, sops-nix, home-manager, ... } @ inputs:
