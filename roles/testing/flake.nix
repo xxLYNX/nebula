@@ -5,9 +5,9 @@
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
 
     # Import the reusable desktop module from the repository's modules directory.
-    # Relative path from `profiles/roles/testing` -> `modules/desktop` is ../../../modules/desktop
+    # Relative path from `roles/testing` -> `modules/desktop` is ../../modules/desktop
     desktop = {
-      url = "path:../../../modules/desktop";
+      url = "path:../../modules/desktop";
       inputs.nixpkgs.follows = "nixpkgs";
     };
   };

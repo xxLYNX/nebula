@@ -33,11 +33,11 @@
         ]
       },
       "locked": {
-        "path": "../../../modules/desktop",
+        "path": "../../modules/desktop",
         "type": "path"
       },
       "original": {
-        "path": "../../../modules/desktop",
+        "path": "../../modules/desktop",
         "type": "path"
       },
       "parent": [
@@ -229,37 +229,17 @@
       "inputs": {
         "nixpkgs": [
           "nixpkgs"
-        ],
-        "securityModule": "securityModule"
-      },
-      "locked": {
-        "path": "./profiles/roles/security-host",
-        "type": "path"
-      },
-      "original": {
-        "path": "./profiles/roles/security-host",
-        "type": "path"
-      },
-      "parent": []
-    },
-    "securityModule": {
-      "inputs": {
-        "nixpkgs": [
-          "security-host",
-          "nixpkgs"
         ]
       },
       "locked": {
-        "path": "../../../modules/security-host",
+        "path": "./modules/security-host",
         "type": "path"
       },
       "original": {
-        "path": "../../../modules/security-host",
+        "path": "./modules/security-host",
         "type": "path"
       },
-      "parent": [
-        "security-host"
-      ]
+      "parent": []
     },
     "sops-nix": {
       "inputs": {
@@ -305,11 +285,11 @@
         ]
       },
       "locked": {
-        "path": "./profiles/roles/testing",
+        "path": "./roles/testing",
         "type": "path"
       },
       "original": {
-        "path": "./profiles/roles/testing",
+        "path": "./roles/testing",
         "type": "path"
       },
       "parent": []
