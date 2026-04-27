@@ -86,6 +86,16 @@
         };
         displayManager.enable = true;
       };
+
+      # Wire the desktop home-manager module for the primary user so that
+      # ~/.config/hypr/hyprland.conf is managed from the repo rather than
+      # falling back to Hyprland's auto-generated default config.
+      home-manager.users.${primaryUser} = {
+        imports = [ desktop.homeManagerModules.default ];
+        homeManager.desktop.enable = true;
+        # stateVersion for home-manager must match the NixOS release in use.
+        home.stateVersion = "25.11";
+      };
     };
   };
 }
