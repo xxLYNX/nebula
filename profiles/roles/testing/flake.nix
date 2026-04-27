@@ -60,11 +60,15 @@
       # Primary user
       users.users.${primaryUser} = {
         isNormalUser = true;
-        extraGroups = [ "wheel" ];
+        extraGroups = [ "wheel" "networkmanager" ];
         # Plaintext password for testing role only. Always enforced on rebuild.
         # Replace with sops-encrypted hashedPasswordFile for production use.
         password = "changeme";
       };
+
+      # Pin to the NixOS release that was active when this host was first installed.
+      # Changing this after the fact can break stateful NixOS options.
+      system.stateVersion = "26.05";
 
       # Bootloader (systemd-boot for UEFI; disko creates the EFI partition at /boot)
       boot.loader.systemd-boot.enable = true;
