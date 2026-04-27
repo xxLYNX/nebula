@@ -118,7 +118,7 @@
         imports = [ desktop.homeManagerModules.default ];
         homeManager.desktop.enable = true;
         # stateVersion for home-manager must match the NixOS release in use.
-        home.stateVersion = "25.11";
+        home.stateVersion = "26.05";
       };
     };
   };
