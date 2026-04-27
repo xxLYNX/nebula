@@ -10,3 +10,7 @@ secrets/
 
 # Nix
 result
+
+# Old configs (contain their own .git, not submodules)
+pluto-config/
+old-config/
