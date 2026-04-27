@@ -59,6 +59,11 @@
         disko.nixosModules.disko
         sops-nix.nixosModules.sops
         home-manager.nixosModules.home-manager
+        # Pin colmena binary to the same version as the flake input so that
+        # `colmena apply-local` on the host always matches the colmenaHive schema.
+        ({ pkgs, ... }: {
+          environment.systemPackages = [ colmena.packages.${pkgs.system}.colmena ];
+        })
       ] ++ (map (mod: inputs.${mod}.nixosModules.default) machine.modules);
 
       # Set the host platform via the modern NixOS option rather than the deprecated
