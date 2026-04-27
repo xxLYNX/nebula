@@ -5,8 +5,13 @@
       "primaryUser": "voyager",
       "platform": "linux",
       "role": "testing",
-      "packs": ["testing"],
-      "tags": ["testing"],
+      "packs": [
+        "testing",
+        "web-utils"
+      ],
+      "tags": [
+        "testing"
+      ],
       "swapSize": "8G",
       "diskDevice": "/dev/sda",
       "deployTarget": "testbed"

@@ -30,6 +30,12 @@
       url = "path:./profiles/roles/security-host";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+
+    # Feature modules (composable, added to host packs in inventory)
+    web-utils = {
+      url = "path:./modules/web-utils";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs = { self, nixpkgs, colmena, disko, sops-nix, home-manager, ... } @ inputs:
