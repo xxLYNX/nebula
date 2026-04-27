@@ -61,9 +61,9 @@
       users.users.${primaryUser} = {
         isNormalUser = true;
         extraGroups = [ "wheel" ];
-        # Temporary password for SDDM/console login. Change after first login,
-        # or replace with a sops-encrypted hashedPassword for production use.
-        initialPassword = "changeme";
+        # Plaintext password for testing role only. Always enforced on rebuild.
+        # Replace with sops-encrypted hashedPasswordFile for production use.
+        password = "changeme";
       };
 
       # Bootloader (systemd-boot for UEFI; disko creates the EFI partition at /boot)
