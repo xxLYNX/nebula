@@ -31,7 +31,7 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    # Feature modules (composable, added to host packs in inventory)
+    # Feature modules (composable, added to host modules in inventory)
     web-utils = {
       url = "path:./modules/web-utils";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -51,7 +51,7 @@
     # It:
     #  - imports host-specific configuration.nix
     #  - adds common modules (disko, sops)
-    #  - maps inventory.packs to the corresponding flakes' nixosModules.default
+    #  - maps inventory.modules to the corresponding flakes' nixosModules.default
     #  - passes the whole machine object as _module.args.machine so role flakes can be generic
     mkHost = name: machine: {
       imports = [
@@ -61,7 +61,7 @@
         home-manager.nixosModules.home-manager
       ] ++ (map (mod: inputs.${mod}.nixosModules.default) machine.modules);
 
-      # Pass arguments to modules produced by flakes in `packs`.
+      # Pass arguments to modules produced by flakes in `modules`.
       _module.args = {
         inherit inputs;
         primaryUser = machine.primaryUser;

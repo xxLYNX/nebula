@@ -66,7 +66,8 @@
 
         # DuckDuckGo as default search engine via Firefox enterprise policy.
         # Zen-browser (Firefox-based) reads policies from /etc/zen/policies/policies.json.
-        environment.etc."zen/policies/policies.json" = lib.mkIf config.services.webUtils.zenBrowser.duckDuckGo {
+        environment.etc."zen/policies/policies.json" = lib.mkIf
+          (config.services.webUtils.zenBrowser.enable && config.services.webUtils.zenBrowser.duckDuckGo) {
           text = builtins.toJSON {
             policies = {
               DefaultSearchProviderEnabled = true;
