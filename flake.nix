@@ -26,6 +26,10 @@
       url = "path:./roles/testing";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    pluto = {
+      url = "path:./roles/pluto";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
     security-host = {
       url = "path:./modules/security-host";
       inputs.nixpkgs.follows = "nixpkgs";

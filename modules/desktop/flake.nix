@@ -5,9 +5,11 @@
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     home-manager.url = "github:nix-community/home-manager";
     home-manager.inputs.nixpkgs.follows = "nixpkgs";
+    nixvim.url = "github:nix-community/nixvim";
+    nixvim.inputs.nixpkgs.follows = "nixpkgs";
   };
 
-  outputs = { self, nixpkgs, home-manager, ... }:
+  outputs = { self, nixpkgs, home-manager, nixvim, ... }:
   let
     pkgs = import nixpkgs { system = "x86_64-linux"; };
     lib  = pkgs.lib;
@@ -99,10 +101,12 @@
     homeManagerModules.default = { config, pkgs, lib, ... }:
     let hmCfg = config.homeManager.desktop or {}; in {
       imports = [
+        nixvim.homeModules.nixvim
         ./home/hyprland.nix
         ./home/fuzzel.nix
         ./home/kitty.nix
         ./home/dunst.nix
+        ./home/nixvim.nix
         ./themes/nebula/home.nix
       ];
 
@@ -127,6 +131,15 @@
             type    = lib.types.bool;
             default = true;
             description = "Apply GTK theme, cursor, dconf dark mode, and Hyprland cursor env vars.";
+          };
+        };
+        editor = {
+          nixvim = {
+            enable = lib.mkOption {
+              type    = lib.types.bool;
+              default = false;
+              description = "Enable the nixvim editor configuration (neovim + LSPs + treesitter + copilot).";
+            };
           };
         };
       };
