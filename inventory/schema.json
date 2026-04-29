@@ -8,6 +8,10 @@
     ],
     "additionalProperties": false,
     "properties": {
+        "$schema": {
+            "type": "string",
+            "description": "JSON Schema reference URI. Used by VS Code for validation and autocompletion."
+        },
         "machines": {
             "type": "object",
             "description": "Map of machine key → machine definition. The key must match the machine's hostname — colmena apply-local auto-detects the running machine by hostname and looks up this map. When you need a second testbed, use a distinct hostname (e.g. testbed2) and add a new entry.",
