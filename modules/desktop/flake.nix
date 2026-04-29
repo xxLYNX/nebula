@@ -96,15 +96,17 @@
     };
 
     # ── Home-manager module ────────────────────────────────────────────────
-    # Composes: hyprland.conf file, fuzzel, kitty, dunst, nebula GTK/cursor theme.
+    # Composes: hyprland.conf, fuzzel, kitty, dunst, nixvim, nebula GTK/cursor theme.
     # All config lives in home/ and themes/nebula/home.nix; options live here.
     homeManagerModules.default = { config, pkgs, lib, ... }:
     let hmCfg = config.homeManager.desktop or {}; in {
       imports = [
+        nixvim.homeModules.nixvim
         ./home/hyprland.nix
         ./home/fuzzel.nix
         ./home/kitty.nix
         ./home/dunst.nix
+        ./home/nixvim.nix
         ./themes/nebula/home.nix
       ];
 
@@ -112,7 +114,7 @@
         enable = lib.mkOption {
           type    = lib.types.bool;
           default = false;
-          description = "Enable home-manager desktop fragments (hyprland.conf, fuzzel, kitty, dunst, nebula theme).";
+          description = "Enable home-manager desktop fragments (hyprland.conf, fuzzel, kitty, dunst, nixvim, nebula theme).";
         };
         hyprConfigSource = lib.mkOption {
           type    = lib.types.nullOr lib.types.path;
@@ -137,17 +139,6 @@
       config = lib.mkIf (hmCfg.enable or false) {
         home.packages = hmCfg.extraHomePackages or [];
       };
-    };
-
-    # ── Nixvim editor module (opt-in by import) ────────────────────────────
-    # Import this in your role's home-manager config when you want the full
-    # neovim setup. Not included in homeManagerModules.default so machines
-    # that don't need an editor don't pull in the closure.
-    homeManagerModules.nixvim = { pkgs, ... }: {
-      imports = [
-        nixvim.homeModules.nixvim
-        ./home/nixvim.nix
-      ];
     };
   };
 }
