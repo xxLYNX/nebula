@@ -121,8 +121,11 @@
     # only as source data for `colmena.lib.makeHive`.
     colmena = {
       meta = {
-        # Provide a fixed evaluation of nixpkgs for the colmena build environment
-        nixpkgs = import nixpkgs { system = "x86_64-linux"; };
+        # nixpkgs for the colmena build environment.
+        # Use nixpkgs.legacyPackages to avoid the "'system' has been renamed to
+        # nixpkgs.hostPlatform" warning — each host already sets hostPlatform
+        # via nixpkgs.hostPlatform in mkHost.
+        nixpkgs = nixpkgs.legacyPackages.x86_64-linux;
         # Forward all inputs so role flakes can import nested inputs if needed
         specialArgs = inputs;
       };
