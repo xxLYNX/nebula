@@ -1,29 +1,33 @@
 {
   "$schema": "./schema.json",
-  "instances": {
+  "machines": {
     "testbed-01": {
-      "hostname":    "testbed",
+      "hostname": "testbed",
       "description": "Testing and development laptop",
-      "address":     "192.168.50.200",
-      "tags":        ["testing"],
-
+      "address": "192.168.50.200",
+      "tags": [
+        "testing"
+      ],
       "users": {
-        "admin":   ["voyager"],
+        "admin": [
+          "voyager"
+        ],
         "regular": []
       },
-
       "os": {
-        "type":    "nixos",
-        "system":  "x86_64-linux",
-        "role":    "testing",
-        "modules": ["web-utils", "maintenance"]
+        "type": "nixos",
+        "system": "x86_64-linux",
+        "role": "testing",
+        "modules": [
+          "web-utils",
+          "maintenance"
+        ]
       },
-
       "hardware": {
         "form": "laptop",
         "disk": {
           "device": "/dev/sda",
-          "swap":   "8G"
+          "swap": "8G"
         }
       }
     }

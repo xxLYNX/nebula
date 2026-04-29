@@ -44,7 +44,7 @@
 
   outputs = { self, nixpkgs, colmena, disko, sops-nix, home-manager, ... } @ inputs:
   let
-    # inventory is the single source of truth for all instances in the fleet
+    # inventory is the single source of truth for all machines in the fleet
     inventory = builtins.fromJSON (builtins.readFile ./inventory/machines.json);
 
     # mkHost builds a NixOS module fragment for each instance defined in the inventory.
@@ -92,7 +92,7 @@
     mkColmenaHost = name: machine: {
       imports = [ (mkHost name machine) ];
       deployment = {
-        # SSH address — set address in inventory/instances (static IP recommended).
+        # SSH address — set address in inventory/machines (static IP recommended).
         targetHost           = machine.address;
         targetUser           = builtins.head machine.users.admin;
         tags                 = machine.tags or [];
@@ -106,7 +106,7 @@
 
     # Colmena host map — uses mkColmenaHost so deployment.* options are present.
     # nixosConfigurations (below) calls mkHost directly, stays free of Colmena options.
-    hosts = builtins.mapAttrs mkColmenaHost inventory.instances;
+    hosts = builtins.mapAttrs mkColmenaHost inventory.machines;
 
     # os.system is already a valid Nix system string (e.g. x86_64-linux) — used directly.
     systemFor = machine: machine.os.system;
@@ -140,6 +140,6 @@
         # Make all flake inputs available as module args (same as Colmena's specialArgs above).
         specialArgs = inputs;
       }
-    ) inventory.instances;
+    ) inventory.machines;
   };
 }
