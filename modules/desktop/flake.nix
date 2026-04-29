@@ -13,10 +13,10 @@
   let
     pkgs = import nixpkgs { system = "x86_64-linux"; };
     lib  = pkgs.lib;
-    defaultPackages = with pkgs; [
-      hyprland xdg-desktop-portal-hyprland
-      kitty dunst wl-clipboard fuzzel wev mpv
-    ];
+    # Packages not managed by programs.* or services.* elsewhere in the desktop module.
+    # hyprland + xdg-desktop-portal-hyprland are installed via programs.hyprland.
+    # kitty/dunst/fuzzel are installed by their home-manager fragments.
+    defaultPackages = with pkgs; [ wl-clipboard mpv ];
     # Auto-import every .nix file in a directory.
     # Saves listing files explicitly — just drop a new .nix in system/ or home/
     # and it's picked up on the next evaluation with no flake.nix edit required.

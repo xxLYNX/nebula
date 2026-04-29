@@ -36,10 +36,10 @@ lib.mkIf (cfg.enable or false) {
 
   security.sudo.wheelNeedsPassword = lib.mkDefault true;
 
-  # Session variables recommended for Wayland/Hyprland
+  # Enable Wayland mode for Electron/Chromium apps (Ozone) and Firefox.
   environment.sessionVariables = {
-    NIXOS_OZONE_WL  = "1";
-    MOZ_ENABLE_WAYLAND = "0";
+    NIXOS_OZONE_WL     = "1";
+    MOZ_ENABLE_WAYLAND = "1";
   };
 
   # Optional autostart helper — only created when the list is non-empty.
