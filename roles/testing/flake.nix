@@ -142,7 +142,10 @@
       # ~/.config/hypr/hyprland.conf is managed from the repo rather than
       # falling back to Hyprland's auto-generated default config.
       home-manager.users.${primaryUser} = {
-        imports = [ desktop.homeManagerModules.default ];
+        imports = [
+          desktop.homeManagerModules.default
+          desktop.homeManagerModules.nixvim
+        ];
         homeManager.desktop.enable = true;
         # stateVersion for home-manager must match the NixOS release in use.
         home.stateVersion = "26.05";
