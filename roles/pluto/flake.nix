@@ -17,6 +17,7 @@
 
       diskDevice = if machine != null then (machine.hardware.disk.device or "/dev/sda") else "/dev/sda";
       swapSize   = if machine != null then (machine.hardware.disk.swap   or "8G")   else "8G";
+      rootFormat = if machine != null then (machine.hardware.disk.format or "xfs")  else "xfs";
     in {
       imports = [ desktop.nixosModules.default ];
 
@@ -44,7 +45,7 @@
               size = "100%";
               content = {
                 type = "filesystem";
-                format = "xfs";
+                format = rootFormat;
                 mountpoint = "/";
               };
             };

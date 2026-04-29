@@ -27,7 +27,8 @@
         "form": "laptop",
         "disk": {
           "device": "/dev/sda",
-          "swap": "8G"
+          "swap": "8G",
+          "format": "xfs"
         }
       }
     },
@@ -54,7 +55,8 @@
         "form": "desktop",
         "disk": {
           "device": "/dev/nvme0n1",
-          "swap": "32G"
+          "swap": "32G",
+          "format": "xfs"
         }
       }
     }
