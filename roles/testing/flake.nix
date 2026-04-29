@@ -17,8 +17,8 @@
     let
       lib = pkgs.lib;
 
-      diskDevice = if machine != null then (machine.diskDevice or "/dev/sda") else "/dev/sda";
-      swapSize   = if machine != null then (machine.swapSize or "8G") else "8G";
+      diskDevice = if machine != null then (machine.hardware.disk.device or "/dev/sda") else "/dev/sda";
+      swapSize   = if machine != null then (machine.hardware.disk.swap   or "8G")   else "8G";
     in {
       # Pull in the desktop module as an import so NixOS evaluates it in the
       # normal module system (options/config merging) rather than calling it manually.

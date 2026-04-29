@@ -44,18 +44,18 @@
 
   outputs = { self, nixpkgs, colmena, disko, sops-nix, home-manager, ... } @ inputs:
   let
-    # inventory is the single source of truth for machines in the monorepo
+    # inventory is the single source of truth for all instances in the fleet
     inventory = builtins.fromJSON (builtins.readFile ./inventory/machines.json);
 
-    # mkHost builds a NixOS module fragment for each host defined in the inventory.
+    # mkHost builds a NixOS module fragment for each instance defined in the inventory.
     # It:
-    #  - imports host-specific configuration.nix
-    #  - adds common modules (disko, sops)
-    #  - maps inventory.modules to the corresponding flakes' nixosModules.default
+    #  - imports host-specific configuration.nix (keyed by machine.hostname, not instance ID)
+    #  - adds common modules (disko, sops, home-manager)
+    #  - imports the role flake (os.role) then any additional feature modules (os.modules)
     #  - passes the whole machine object as _module.args.machine so role flakes can be generic
     mkHost = name: machine: {
       imports = [
-        ./hosts/${name}/configuration.nix
+        ./hosts/${machine.hostname}/configuration.nix
         disko.nixosModules.disko
         sops-nix.nixosModules.sops
         home-manager.nixosModules.home-manager
@@ -64,7 +64,8 @@
         ({ pkgs, ... }: {
           environment.systemPackages = [ colmena.packages.${pkgs.system}.colmena ];
         })
-      ] ++ (map (mod: inputs.${mod}.nixosModules.default) machine.modules);
+      ] ++ [ inputs.${machine.os.role}.nixosModules.default ]
+        ++ (map (mod: inputs.${mod}.nixosModules.default) machine.os.modules);
 
       # Set the host platform via the modern NixOS option rather than the deprecated
       # `system` argument to nixosSystem/Colmena meta. This suppresses the
@@ -74,13 +75,13 @@
       # Pass arguments to modules produced by flakes in `modules`.
       _module.args = {
         inherit inputs;
-        primaryUser = machine.primaryUser;
-        machine = machine; # whole machine object for per-host params (diskDevice, swapSize, tags, etc.)
+        primaryUser = builtins.head machine.users.admin;
+        machine = machine; # whole instance object — role flakes read hardware.disk.*, os.*, users.*, etc.
       };
 
       # Provide home-manager with helpful extra args so home-manager fragments can access inputs and primaryUser.
       # This makes the module's `homeManagerModules.default` available and parameterized per-host.
-      home-manager.extraSpecialArgs = { inherit inputs; primaryUser = machine.primaryUser; };
+      home-manager.extraSpecialArgs = { inherit inputs; primaryUser = builtins.head machine.users.admin; };
 
       networking.hostName = machine.hostname;
     };
@@ -91,10 +92,9 @@
     mkColmenaHost = name: machine: {
       imports = [ (mkHost name machine) ];
       deployment = {
-        # SSH address — set deployTarget in inventory/machines.json (hostname or IP).
-        # Avahi/mDNS is enabled in the testing role so bare hostnames resolve on LAN.
-        targetHost           = machine.deployTarget or machine.hostname;
-        targetUser           = machine.primaryUser;
+        # SSH address — set address in inventory/instances (static IP recommended).
+        targetHost           = machine.address;
+        targetUser           = builtins.head machine.users.admin;
         tags                 = machine.tags or [];
         # Allows `colmena apply-local` to be run directly on the target machine itself.
         # Useful when deploying from testbed (no remote Nix host required).
@@ -106,12 +106,10 @@
 
     # Colmena host map — uses mkColmenaHost so deployment.* options are present.
     # nixosConfigurations (below) calls mkHost directly, stays free of Colmena options.
-    hosts = builtins.mapAttrs mkColmenaHost inventory.machines;
+    hosts = builtins.mapAttrs mkColmenaHost inventory.instances;
 
-    # Map inventory platform string to a Nix system string.
-    systemFor = machine:
-      if machine.platform == "linux" then "x86_64-linux"
-      else machine.platform;
+    # os.system is already a valid Nix system string (e.g. x86_64-linux) — used directly.
+    systemFor = machine: machine.os.system;
   in {
     # Colmena expects a top-level attribute containing a `meta` attr (nixpkgs + specialArgs)
     # and then the host entries. We compose that by merging `meta` with our `hosts` map.
@@ -142,6 +140,6 @@
         # Make all flake inputs available as module args (same as Colmena's specialArgs above).
         specialArgs = inputs;
       }
-    ) inventory.machines;
+    ) inventory.instances;
   };
 }

@@ -1,21 +1,31 @@
 {
-  "machines": {
-    "testbed": {
-      "hostname": "testbed",
-      "primaryUser": "voyager",
-      "platform": "linux",
-      "role": "testing",
-      "modules": [
-        "testing",
-        "web-utils",
-        "maintenance"
-      ],
-      "tags": [
-        "testing"
-      ],
-      "swapSize": "8G",
-      "diskDevice": "/dev/sda",
-      "deployTarget": "testbed"
+  "$schema": "./schema.json",
+  "instances": {
+    "testbed-01": {
+      "hostname":    "testbed",
+      "description": "Testing and development laptop",
+      "address":     "192.168.50.200",
+      "tags":        ["testing"],
+
+      "users": {
+        "admin":   ["voyager"],
+        "regular": []
+      },
+
+      "os": {
+        "type":    "nixos",
+        "system":  "x86_64-linux",
+        "role":    "testing",
+        "modules": ["web-utils", "maintenance"]
+      },
+
+      "hardware": {
+        "form": "laptop",
+        "disk": {
+          "device": "/dev/sda",
+          "swap":   "8G"
+        }
+      }
     }
   }
 }
