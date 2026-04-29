@@ -17,6 +17,14 @@
       hyprland xdg-desktop-portal-hyprland
       kitty dunst wl-clipboard fuzzel wev mpv
     ];
+    # Auto-import every .nix file in a directory.
+    # Saves listing files explicitly — just drop a new .nix in system/ or home/
+    # and it's picked up on the next evaluation with no flake.nix edit required.
+    importDir = dir:
+      builtins.map (name: dir + "/${name}")
+        (builtins.filter (name: builtins.match ".*\.nix$" name != null)
+          (builtins.attrNames
+            (lib.filterAttrs (_: type: type == "regular") (builtins.readDir dir))));
   in {
 
     # ── System NixOS module ────────────────────────────────────────────────
@@ -24,9 +32,7 @@
     # All config lives in system/ and themes/nebula/system.nix; options live here.
     nixosModules.default = { config, pkgs, lib, ... }:
     let cfg = config.services.desktop or {}; in {
-      imports = [
-        ./system/hyprland.nix
-        ./system/packages.nix
+      imports = (importDir ./system) ++ [
         ./themes/nebula/system.nix
       ];
 
@@ -100,13 +106,7 @@
     # All config lives in home/ and themes/nebula/home.nix; options live here.
     homeManagerModules.default = { config, pkgs, lib, ... }:
     let hmCfg = config.homeManager.desktop or {}; in {
-      imports = [
-        nixvim.homeModules.nixvim
-        ./home/hyprland.nix
-        ./home/fuzzel.nix
-        ./home/kitty.nix
-        ./home/dunst.nix
-        ./home/nixvim.nix
+      imports = [ nixvim.homeModules.nixvim ] ++ (importDir ./home) ++ [
         ./themes/nebula/home.nix
       ];
 

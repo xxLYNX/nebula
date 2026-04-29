@@ -30,6 +30,33 @@
           "swap": "8G"
         }
       }
+    },
+    "pluto": {
+      "hostname": "pluto",
+      "description": "Primary workstation",
+      "address": "192.168.50.201",
+      "tags": [
+        "workstation"
+      ],
+      "users": {
+        "admin": [
+          "voyager"
+        ],
+        "regular": []
+      },
+      "os": {
+        "type": "nixos",
+        "system": "x86_64-linux",
+        "role": "pluto",
+        "modules": []
+      },
+      "hardware": {
+        "form": "desktop",
+        "disk": {
+          "device": "/dev/nvme0n1",
+          "swap": "32G"
+        }
+      }
     }
   }
 }
