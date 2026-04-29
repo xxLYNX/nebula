@@ -1,8 +1,5 @@
-{ config, pkgs, lib, ... }:
-let
-  cfg = config.homeManager.desktop.editor.nixvim;
-in
-lib.mkIf cfg.enable {
+{ pkgs, ... }:
+{
 
   programs.nixvim = {
     enable = true;

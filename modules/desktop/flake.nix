@@ -101,12 +101,10 @@
     homeManagerModules.default = { config, pkgs, lib, ... }:
     let hmCfg = config.homeManager.desktop or {}; in {
       imports = [
-        nixvim.homeModules.nixvim
         ./home/hyprland.nix
         ./home/fuzzel.nix
         ./home/kitty.nix
         ./home/dunst.nix
-        ./home/nixvim.nix
         ./themes/nebula/home.nix
       ];
 
@@ -133,21 +131,23 @@
             description = "Apply GTK theme, cursor, dconf dark mode, and Hyprland cursor env vars.";
           };
         };
-        editor = {
-          nixvim = {
-            enable = lib.mkOption {
-              type    = lib.types.bool;
-              default = false;
-              description = "Enable the nixvim editor configuration (neovim + LSPs + treesitter + copilot).";
-            };
-          };
-        };
       };
 
       # Extra home packages (not tied to a specific app fragment)
       config = lib.mkIf (hmCfg.enable or false) {
         home.packages = hmCfg.extraHomePackages or [];
       };
+    };
+
+    # ── Nixvim editor module (opt-in by import) ────────────────────────────
+    # Import this in your role's home-manager config when you want the full
+    # neovim setup. Not included in homeManagerModules.default so machines
+    # that don't need an editor don't pull in the closure.
+    homeManagerModules.nixvim = { pkgs, ... }: {
+      imports = [
+        nixvim.homeModules.nixvim
+        ./home/nixvim.nix
+      ];
     };
   };
 }

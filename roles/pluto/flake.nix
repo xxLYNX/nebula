@@ -105,11 +105,11 @@
       services.avahi = { enable = true; nssmdns4 = true; openFirewall = true; };
 
       home-manager.users.${primaryUser} = {
-        imports = [ desktop.homeManagerModules.default ];
-        homeManager.desktop = {
-          enable = true;
-          editor.nixvim.enable = true;
-        };
+        imports = [
+          desktop.homeManagerModules.default
+          desktop.homeManagerModules.nixvim
+        ];
+        homeManager.desktop.enable = true;
         home.stateVersion = "26.05";
       };
     };
