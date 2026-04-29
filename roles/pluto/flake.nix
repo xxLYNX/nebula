@@ -101,8 +101,8 @@
         displayManager.enable = true;
       };
 
-      services.openssh.enable = true;
-      security.sudo.wheelNeedsPassword = false;
+      services.openssh.enable = false;
+      security.sudo.wheelNeedsPassword = true;
       services.avahi = { enable = true; nssmdns4 = true; openFirewall = true; };
 
       home-manager.users.${primaryUser} = {
