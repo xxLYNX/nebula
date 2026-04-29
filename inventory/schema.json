@@ -1,7 +1,7 @@
 {
     "$schema": "http://json-schema.org/draft-07/schema#",
     "title": "nebula inventory",
-    "description": "Single source of truth for all machines in the nebula fleet. Each key is a unique machine ID (slug, e.g. testbed-01). The root flake reads this file to build nixosConfigurations and the Colmena hive.",
+    "description": "Single source of truth for all machines in the nebula fleet. Each key must match the machine's hostname (e.g. testbed, pluto). This allows colmena apply-local to auto-detect the host without extra flags. The root flake reads this file to build nixosConfigurations and the Colmena hive.",
     "type": "object",
     "required": [
         "machines"
@@ -10,7 +10,7 @@
     "properties": {
         "machines": {
             "type": "object",
-            "description": "Map of machine ID → machine definition. Machine IDs are lowercase slugs (e.g. testbed-01, pluto-01). Used as the Colmena host key and as a unique fleet identifier — separate from hostname so two machines can share a role without hostname collision.",
+            "description": "Map of machine key → machine definition. The key must match the machine's hostname — colmena apply-local auto-detects the running machine by hostname and looks up this map. When you need a second testbed, use a distinct hostname (e.g. testbed2) and add a new entry.",
             "additionalProperties": {
                 "$ref": "#/definitions/machine"
             }

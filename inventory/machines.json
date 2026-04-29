@@ -1,7 +1,7 @@
 {
   "$schema": "./schema.json",
   "machines": {
-    "testbed-01": {
+    "testbed": {
       "hostname": "testbed",
       "description": "Testing and development laptop",
       "address": "192.168.50.200",
