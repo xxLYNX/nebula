@@ -10,12 +10,28 @@ Single source of truth for all NixOS machines. Every host is described once — 
 flake.nix                  # Root flake. Reads inventory, builds nixosConfigurations + colmena.
 flake.lock                 # Pinned inputs. Commit after any `nix flake update`.
 inventory/machines.json    # Single source of truth: one entry per machine.
-hosts/<name>/              # Per-host config (hardware, host-specific overrides).
+hosts/<name>/              # Per-host config (hardware facts, host-specific overrides).
+roles/<name>/              # Role flakes — compose modules into a machine personality.
 modules/                   # Composable feature modules (desktop, web-utils, …).
-profiles/roles/            # Role flakes assigned to machines via inventory packs[].
 docs/                      # Operator runbooks and migration tracking.
 terraform/                 # One-shot provisioner for new machines (nixos-anywhere).
 ```
+
+---
+
+## About the stack
+
+### NixOS — the operating system
+NixOS is a Linux distribution where the entire system — packages, services, users, kernel parameters — is declared in Nix code and built atomically. There is no imperative `apt install` or config file edited in place. Every rebuild produces a new system generation that can be rolled back in the boot menu. This makes machines reproducible: the same config always produces the same system, on any hardware.
+
+### home-manager — user environment management
+home-manager extends NixOS's declarative model into the user's home directory. Dotfiles, shell config, application settings, and user services are all declared in Nix and applied atomically alongside the system. In nebula it is integrated as a NixOS module (not run as a standalone tool), so `colmena apply-local` rebuilds both the system and the user environment in one step with no separate `home-manager switch`.
+
+### disko — declarative disk partitioning
+Traditional NixOS installs require manually running `parted`/`fdisk` before install, then `nixos-generate-config` detects what you created. Disko replaces this: the partition layout is declared in Nix, version-controlled in the repo, and executed once during bootstrap from the live ISO. The result is that a machine's full disk layout — partition table, filesystem types, swap — is reproducible from the repo rather than from someone's memory of what commands they ran.
+
+### Colmena — fleet deployment
+`nixos-rebuild switch` applies a config to the machine you are sitting on. Colmena inverts this: the config lives in a central repo and Colmena pushes outward to the fleet over SSH. It adds multi-host orchestration, tag-based targeting, and deployment metadata on top of standard NixOS evaluation — but the underlying system management is identical. `colmena apply-local` is just `nixos-rebuild` reading from the `colmenaHive` flake output rather than `/etc/nixos`.
 
 ---
 
