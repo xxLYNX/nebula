@@ -1,0 +1,67 @@
+# SOPS configuration for the nebula fleet.
+#
+# Key groups and Shamir threshold
+# --------------------------------
+# Management secrets (passwords, tokens) use threshold=2 requiring:
+#   - Group A: YubiKey PIV age identity  (placeholder — fill in after setup)
+#   - Group B: pluto SSH host age key    (run: ssh-keyscan pluto | ssh-to-age)
+#
+# Machine-local secrets (e.g. per-machine service tokens) can be encrypted
+# to a single machine key (threshold=1) since they're useless without that machine.
+#
+# Age public key collection
+# -------------------------
+# After each machine's first boot, collect its host key:
+#   nix shell nixpkgs#ssh-to-age --command \
+#     sh -c 'ssh-keyscan -t ed25519 <hostname> | ssh-to-age'
+# Then add the result as an anchor below and reference it in the path rules.
+#
+# YubiKey setup (PIV slot → age identity)
+# ----------------------------------------
+#   nix shell nixpkgs#age-plugin-yubikey --command age-plugin-yubikey --generate
+# Prints a recipient line like: age1yubikey1q... — add it as yubikey_primary below.
+
+keys:
+  # --- Machine age keys (from SSH host ed25519 keys) ---
+  - &pluto_host     age1AAAA_PLACEHOLDER_run_ssh_to_age_for_pluto    # TODO: fill in
+  - &testbed_host   age1AAAA_PLACEHOLDER_run_ssh_to_age_for_testbed  # TODO: fill in
+
+  # --- YubiKey management keys ---
+  - &yubikey_primary age1yubikey1q_PLACEHOLDER_run_age_plugin_yubikey  # TODO: fill in
+
+creation_rules:
+  # Management secrets: require both the YubiKey and the pluto host key (threshold=2).
+  # Stored in secrets/management/. Decryptable only with physical YubiKey + pluto available.
+  - path_regex: ^secrets/management/.*\.yaml$
+    key_groups:
+      - age:
+          - *yubikey_primary
+        threshold: 1
+      - age:
+          - *pluto_host
+        threshold: 1
+    # Both groups must contribute, making effective threshold=2.
+    threshold: 2
+
+  # pluto machine secrets: single-machine, decryptable with pluto's host key alone.
+  - path_regex: ^secrets/machines/pluto/.*\.yaml$
+    key_groups:
+      - age:
+          - *pluto_host
+          - *yubikey_primary  # admin escape hatch
+        threshold: 1
+
+  # testbed machine secrets: single-machine.
+  - path_regex: ^secrets/machines/testbed/.*\.yaml$
+    key_groups:
+      - age:
+          - *testbed_host
+          - *yubikey_primary  # admin escape hatch
+        threshold: 1
+
+  # Fallback: any other secret must be encrypted to the YubiKey at minimum.
+  - path_regex: ^secrets/.*\.yaml$
+    key_groups:
+      - age:
+          - *yubikey_primary
+        threshold: 1
