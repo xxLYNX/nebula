@@ -210,10 +210,26 @@ fi
 git add "$SOPS_YAML"
 git add -f "$SECRET_FILE"
 
-# Create the enrollment marker. This is a plain file (no .yaml extension) so it
-# is NOT matched by the secrets/**/*.yaml gitignore rule. Nix's flake source
-# filter strips gitignored files, so builtins.pathExists on machine.yaml always
-# returns false. The marker is the actual flag builtins.pathExists checks.
+# Set enrolled=true in inventory/machines.json.
+# flake.nix reads machine.enrolled directly from the inventory — no
+# builtins.pathExists magic, which is unreliable for interpolated paths.
+INVENTORY="$REPO/inventory/machines.json"
+if command -v jq >/dev/null 2>&1; then
+  jq --arg h "$HOSTNAME" '.machines[$h].enrolled = true' "$INVENTORY" > "${INVENTORY}.tmp" \
+    && mv "${INVENTORY}.tmp" "$INVENTORY"
+else
+  # jq not available: use python (present on all NixOS installs).
+  python3 -c "
+import json, sys
+with open('$INVENTORY') as f: d = json.load(f)
+d['machines']['$HOSTNAME']['enrolled'] = True
+with open('$INVENTORY', 'w') as f: json.dump(d, f, indent=2)
+print()
+"
+fi
+git add "$INVENTORY"
+
+# Keep a human-readable marker alongside machine.yaml for reference.
 MARKER_FILE="$SECRETS_DIR/enrolled"
 printf 'age_pubkey: %s\nenrolled_at: %s\n' "$AGE_PUBKEY" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" > "$MARKER_FILE"
 git add "$MARKER_FILE"

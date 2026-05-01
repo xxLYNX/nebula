@@ -36,6 +36,7 @@
     "pluto": {
       "hostname": "pluto",
       "description": "Primary workstation",
+      "enrolled": true,
       "address": "192.168.50.201",
       "tags": [
         "workstation",
