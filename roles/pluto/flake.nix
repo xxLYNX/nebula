@@ -44,12 +44,18 @@
         };
       };
 
+      # Decrypt the user's hashed password from the machine's sops secrets file.
+      # The secret must exist (run scripts/enroll-machine.sh) before the first apply
+      # that includes this role, or sops-nix activation will fail with a missing-key error.
+      # neededForUsers = true ensures decryption happens before the users module runs.
+      sops.secrets.user_password_hash = {
+        neededForUsers = true;
+      };
+
       users.users.${primaryUser} = {
-        isNormalUser = true;
-        extraGroups  = [ "wheel" "networkmanager" ];
-        # Set a real password via sops-encrypted hashedPasswordFile in production.
-        # This placeholder forces a reset on first login.
-        password = "changeme";
+        isNormalUser      = true;
+        extraGroups       = [ "wheel" "networkmanager" ];
+        hashedPasswordFile = config.sops.secrets.user_password_hash.path;
       };
 
       system.stateVersion = "26.05";

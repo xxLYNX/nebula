@@ -45,13 +45,17 @@
         };
       };
 
+      # Decrypt the user's hashed password from the machine's sops secrets file.
+      # neededForUsers = true ensures decryption happens before the users module runs.
+      sops.secrets.user_password_hash = {
+        neededForUsers = true;
+      };
+
       # Primary user
       users.users.${primaryUser} = {
-        isNormalUser = true;
-        extraGroups = [ "wheel" "networkmanager" ];
-        # Plaintext password for testing role only. Always enforced on rebuild.
-        # Replace with sops-encrypted hashedPasswordFile for production use.
-        password = "changeme";
+        isNormalUser       = true;
+        extraGroups        = [ "wheel" "networkmanager" ];
+        hashedPasswordFile = config.sops.secrets.user_password_hash.path;
       };
 
       # Pin to the NixOS release that was active when this host was first installed.
