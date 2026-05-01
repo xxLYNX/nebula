@@ -14,8 +14,8 @@
     # key generation step required.
     age.sshKeyPaths = [ "/etc/ssh/ssh_host_ed25519_key" ];
 
-    # Default secrets file location. Individual sops.secrets.* entries can
-    # override this, but having a default keeps per-secret declarations concise.
-    defaultSopsFile = "/run/secrets/machine.yaml";
+    # sops.defaultSopsFile is set per-machine in mkHost (flake.nix) because it
+    # requires the hostname, which is only known at the root flake level.
+    # Individual sops.secrets.* entries can still override sopsFile if needed.
   };
 }

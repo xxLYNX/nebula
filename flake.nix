@@ -57,7 +57,14 @@
     #  - adds common modules (disko, sops, home-manager)
     #  - imports the role flake (os.role) then any additional feature modules (os.modules)
     #  - passes the whole machine object as _module.args.machine so role flakes can be generic
-    mkHost = name: machine: {
+    mkHost = name: machine:
+    let
+      # Path to this machine's encrypted secrets file in the repo.
+      # Used as sops.defaultSopsFile so sops.secrets.* entries don't need to
+      # repeat the path. Falls back to an empty file if the machine hasn't been
+      # enrolled yet (scripts/enroll-machine.sh creates and encrypts it).
+      secretsFile = ./secrets/machines + "/${machine.hostname}/machine.yaml";
+    in {
       imports = [
         ./hosts/${machine.hostname}/configuration.nix
         disko.nixosModules.disko
@@ -90,6 +97,14 @@
       home-manager.extraSpecialArgs = { inherit inputs; primaryUser = builtins.head machine.users.admin; };
 
       networking.hostName = machine.hostname;
+
+      # Set the machine's default sops secrets file.
+      # builtins.pathExists guards against flake eval failures on machines that
+      # haven't run enroll-machine.sh yet. Once enrolled (file committed to git),
+      # sops.secrets.* entries in the role can omit sopsFile entirely.
+      sops.defaultSopsFile =
+        if builtins.pathExists secretsFile then secretsFile
+        else builtins.toFile "no-machine-secrets.yaml" "";
     };
 
     # Colmena host wrapper: extends mkHost with deployment.* options.

@@ -32,5 +32,9 @@
   };
 
   # Minimal universally-useful CLI tools. Role and module packages are additive.
-  environment.systemPackages = with pkgs; [ git curl ];
+  # sops + ssh-to-age + mkpasswd are fleet administration tools:
+  #   - sops: encrypt/decrypt secrets files on-machine (needed by enroll-machine.sh)
+  #   - ssh-to-age: convert SSH host pubkey to age pubkey during enrollment
+  #   - mkpasswd: hash passwords for sops-encrypted user password files
+  environment.systemPackages = with pkgs; [ git curl sops ssh-to-age mkpasswd ];
 }
