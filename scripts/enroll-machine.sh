@@ -210,6 +210,14 @@ fi
 git add "$SOPS_YAML"
 git add -f "$SECRET_FILE"
 
+# Create the enrollment marker. This is a plain file (no .yaml extension) so it
+# is NOT matched by the secrets/**/*.yaml gitignore rule. Nix's flake source
+# filter strips gitignored files, so builtins.pathExists on machine.yaml always
+# returns false. The marker is the actual flag builtins.pathExists checks.
+MARKER_FILE="$SECRETS_DIR/enrolled"
+printf 'age_pubkey: %s\nenrolled_at: %s\n' "$AGE_PUBKEY" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" > "$MARKER_FILE"
+git add "$MARKER_FILE"
+
 if git diff --cached --quiet; then
   info "Nothing new to commit — $HOSTNAME was already enrolled."
   exit 0

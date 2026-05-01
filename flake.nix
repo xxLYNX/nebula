@@ -61,10 +61,14 @@
     mkHost = name: machine:
     let
       # Path to this machine's encrypted secrets file in the repo.
-      # builtins.pathExists is evaluated at flake eval time — the file must be committed
-      # to git (not just present on disk) for Nix to see it in the store.
       secretsFile = ./secrets/machines + "/${machine.hostname}/machine.yaml";
-      enrolled    = builtins.pathExists secretsFile;
+      # Enrollment marker: a plain file with no extension so it is NOT matched by
+      # the 'secrets/**/*.yaml' gitignore rule. Nix's flake source filter strips
+      # gitignored files from the store copy, so builtins.pathExists on machine.yaml
+      # always returns false even when force-committed. The marker file is committed
+      # normally (no -f needed) and is always visible to the evaluator.
+      enrolledMarker = ./secrets/machines + "/${machine.hostname}/enrolled";
+      enrolled       = builtins.pathExists enrolledMarker;
     in {
       imports = [
         ./hosts/${machine.hostname}/configuration.nix
