@@ -189,13 +189,14 @@
 
   # Dev toolchain packages
   home.packages = with pkgs; [
-    # Go
-    go gopls golangci-lint gotools gofumpt
+    # Go — gopls is managed by nixvim's LSP plugin; omitted here to avoid
+    # a buildEnv conflict on the `modernize` binary (gopls 0.21+ and gotools both ship it).
+    go golangci-lint gotools gofumpt
     # JavaScript / TypeScript
     typescript-language-server typescript eslint prettier
     # Bash
     bash-language-server shellcheck shfmt
     # Nix
-    nixd nixfmt-rfc-style
+    nixd pkgs.nixfmt
   ];
 }
