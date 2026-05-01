@@ -1,6 +1,8 @@
 { pkgs, ... }:
 {
 
+  nixpkgs.config.allowUnfree = true;
+
   programs.nixvim = {
     enable = true;
     defaultEditor = true;
