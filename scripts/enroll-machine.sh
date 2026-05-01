@@ -234,8 +234,13 @@ git push
 
 # ── 6. apply the new config so sops-nix activates the secret ──────────────────
 echo ""
-info "Applying new configuration via colmena (this rebuilds NixOS with the SOPS secret)..."
-sudo colmena apply-local --sudo
+info "Applying new configuration via colmena..."
+# Must run as the regular user from the repo root — colmena uses --sudo internally
+# for the activation step. Running 'sudo colmena' would make colmena run as root,
+# resolving ~/nebula to /root/nebula (which doesn't exist) and evaluating the
+# wrong flake path.
+cd "$REPO"
+colmena apply-local --sudo
 
 # ── 7. verify SOPS actually worked ────────────────────────────────────────────
 echo ""
@@ -248,7 +253,9 @@ SECRET_RUNTIME="/run/secrets/user_password_hash"
 # neededForUsers = true, but check anyway).
 [[ -f "$SECRET_RUNTIME" ]] \
   || die "Verification failed: $SECRET_RUNTIME does not exist.
-sops-nix did not decrypt the secret. Check: journalctl -b | grep sops"
+sops-nix did not decrypt the secret.
+Check activation logs: journalctl -b -u sops-install-secrets
+Also verify machineEnrolled: nix eval .#colmenaHive.pluto._module.args.machineEnrolled"
 
 RUNTIME_HASH="$(cat "$SECRET_RUNTIME")"
 
