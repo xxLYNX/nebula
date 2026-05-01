@@ -1,8 +1,6 @@
 { pkgs, ... }:
 {
 
-  nixpkgs.config.allowUnfree = true;
-
   programs.nixvim = {
     enable = true;
     defaultEditor = true;
@@ -138,21 +136,22 @@
     };
 
     # ── AI code completion ────────────────────────────────────────────────
-    plugins.copilot-vim = {
-      enable = true;
-      settings = {
-        no_tab_map = true;
-        filetypes  = { "*" = true; };
-      };
-    };
-
-    plugins.codecompanion = {
-      enable = true;
-      settings.interactions = {
-        chat   = { adapter = "copilot"; };
-        inline = { adapter = "copilot"; };
-      };
-    };
+    # Disabled — vimplugin-copilot-vim unfree license not respected during
+    # nixos-install. Re-enable once packaging issue is resolved.
+    # plugins.copilot-vim = {
+    #   enable = true;
+    #   settings = {
+    #     no_tab_map = true;
+    #     filetypes  = { "*" = true; };
+    #   };
+    # };
+    # plugins.codecompanion = {
+    #   enable = true;
+    #   settings.interactions = {
+    #     chat   = { adapter = "copilot"; };
+    #     inline = { adapter = "copilot"; };
+    #   };
+    # };
 
     # ── Keymaps ───────────────────────────────────────────────────────────
     keymaps = [
