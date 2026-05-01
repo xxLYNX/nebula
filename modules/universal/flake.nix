@@ -3,12 +3,17 @@
 
   inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
 
-  outputs = { self, nixpkgs, ... }: {
-    nixosModules.default = { ... }: {
-      imports = [
-        ./fragments/nix-baseline.nix
-        ./fragments/sops.nix
-      ];
+  outputs =
+    { self, nixpkgs, ... }:
+    {
+      nixosModules.default =
+        { ... }:
+        {
+          imports = [
+            ./fragments/nix-baseline.nix
+            ./fragments/sops.nix
+            ./fragments/users.nix
+          ];
+        };
     };
-  };
 }
