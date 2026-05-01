@@ -246,7 +246,7 @@ colmena apply-local --sudo
 echo ""
 info "Verifying SOPS decryption..."
 
-SECRET_RUNTIME="/run/secrets/user_password_hash"
+SECRET_RUNTIME="/run/secrets-for-users/user_password_hash"
 
 # sops-nix writes decrypted secrets to /run/secrets/ at activation.
 # If the file is missing, activation failed silently (shouldn't happen with
