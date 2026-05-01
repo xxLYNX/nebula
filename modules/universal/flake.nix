@@ -13,6 +13,7 @@
             ./fragments/nix-baseline.nix
             ./fragments/sops.nix
             ./fragments/users.nix
+            ./fragments/management.nix
           ];
         };
     };
