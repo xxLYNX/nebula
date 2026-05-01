@@ -4,8 +4,11 @@
 *.tfstate
 *.tfstate.backup
 
-# Secrets
+# Secrets — encrypted .yaml files are safe to commit but we ignore by default
+# to prevent accidental plaintext commits. Track only templates and docs.
 secrets/
+!secrets/README.md
+!secrets/**/*.template
 *.age
 
 # Nix
