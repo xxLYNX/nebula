@@ -28,6 +28,27 @@
       "inputs": {
         "home-manager": "home-manager_2",
         "nixpkgs": [
+          "registry",
+          "nixpkgs"
+        ],
+        "nixvim": "nixvim"
+      },
+      "locked": {
+        "path": "../desktop",
+        "type": "path"
+      },
+      "original": {
+        "path": "../desktop",
+        "type": "path"
+      },
+      "parent": [
+        "registry"
+      ]
+    },
+    "desktop_2": {
+      "inputs": {
+        "home-manager": "home-manager_4",
+        "nixpkgs": [
           "testing",
           "nixpkgs"
         ]
@@ -80,6 +101,29 @@
         "type": "github"
       }
     },
+    "flake-parts": {
+      "inputs": {
+        "nixpkgs-lib": [
+          "registry",
+          "desktop",
+          "nixvim",
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1775087534,
+        "narHash": "sha256-91qqW8lhL7TLwgQWijoGBbiD4t7/q75KTi8NxjVmSmA=",
+        "owner": "hercules-ci",
+        "repo": "flake-parts",
+        "rev": "3107b77cd68437b9a76194f0f7f9c55f2329ca5b",
+        "type": "github"
+      },
+      "original": {
+        "owner": "hercules-ci",
+        "repo": "flake-parts",
+        "type": "github"
+      }
+    },
     "flake-utils": {
       "locked": {
         "lastModified": 1659877975,
@@ -118,17 +162,17 @@
     "home-manager_2": {
       "inputs": {
         "nixpkgs": [
-          "testing",
+          "registry",
           "desktop",
           "nixpkgs"
         ]
       },
       "locked": {
-        "lastModified": 1777258078,
-        "narHash": "sha256-Dzx9ZhWswCta/huBhoc1I182JGM9kj7t31z8Sx+mpIc=",
+        "lastModified": 1777594677,
+        "narHash": "sha256-h90sHwoRJLRvaTpZroTvU2JRHDFj0czUafM8eqLe1RI=",
         "owner": "nix-community",
         "repo": "home-manager",
-        "rev": "c97d92137300ab075c2eca2d83a8b4d81921a4f0",
+        "rev": "899c08a15beae5da51a5cecd6b2b994777a948da",
         "type": "github"
       },
       "original": {
@@ -140,6 +184,7 @@
     "home-manager_3": {
       "inputs": {
         "nixpkgs": [
+          "registry",
           "web-utils",
           "zen-browser",
           "nixpkgs"
@@ -159,21 +204,46 @@
         "type": "github"
       }
     },
-    "maintenance": {
+    "home-manager_4": {
       "inputs": {
         "nixpkgs": [
+          "testing",
+          "desktop",
           "nixpkgs"
         ]
       },
       "locked": {
-        "path": "./modules/maintenance",
+        "lastModified": 1777258078,
+        "narHash": "sha256-Dzx9ZhWswCta/huBhoc1I182JGM9kj7t31z8Sx+mpIc=",
+        "owner": "nix-community",
+        "repo": "home-manager",
+        "rev": "c97d92137300ab075c2eca2d83a8b4d81921a4f0",
+        "type": "github"
+      },
+      "original": {
+        "owner": "nix-community",
+        "repo": "home-manager",
+        "type": "github"
+      }
+    },
+    "maintenance": {
+      "inputs": {
+        "nixpkgs": [
+          "registry",
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "path": "../maintenance",
         "type": "path"
       },
       "original": {
-        "path": "./modules/maintenance",
+        "path": "../maintenance",
         "type": "path"
       },
-      "parent": []
+      "parent": [
+        "registry"
+      ]
     },
     "nix-github-actions": {
       "inputs": {
@@ -212,34 +282,97 @@
         "type": "github"
       }
     },
-    "root": {
+    "nixvim": {
       "inputs": {
-        "colmena": "colmena",
-        "disko": "disko",
-        "home-manager": "home-manager",
-        "maintenance": "maintenance",
-        "nixpkgs": "nixpkgs",
-        "security-host": "security-host",
-        "sops-nix": "sops-nix",
-        "testing": "testing",
-        "web-utils": "web-utils"
+        "flake-parts": "flake-parts",
+        "nixpkgs": [
+          "registry",
+          "desktop",
+          "nixpkgs"
+        ],
+        "systems": "systems"
+      },
+      "locked": {
+        "lastModified": 1777236345,
+        "narHash": "sha256-ALOqlq7bE30lsX4rA76hXeQ2aLLEpb44hS+D1+jWS88=",
+        "owner": "nix-community",
+        "repo": "nixvim",
+        "rev": "a67d9cd6ff725a763afe88727aac73208ded3bf4",
+        "type": "github"
+      },
+      "original": {
+        "owner": "nix-community",
+        "repo": "nixvim",
+        "type": "github"
       }
     },
-    "security-host": {
+    "pluto": {
       "inputs": {
         "nixpkgs": [
           "nixpkgs"
         ]
       },
       "locked": {
-        "path": "./modules/security-host",
+        "path": "./roles/pluto",
         "type": "path"
       },
       "original": {
-        "path": "./modules/security-host",
+        "path": "./roles/pluto",
         "type": "path"
       },
       "parent": []
+    },
+    "registry": {
+      "inputs": {
+        "desktop": "desktop",
+        "maintenance": "maintenance",
+        "nixpkgs": [
+          "nixpkgs"
+        ],
+        "security-host": "security-host",
+        "web-utils": "web-utils"
+      },
+      "locked": {
+        "path": "./modules/registry",
+        "type": "path"
+      },
+      "original": {
+        "path": "./modules/registry",
+        "type": "path"
+      },
+      "parent": []
+    },
+    "root": {
+      "inputs": {
+        "colmena": "colmena",
+        "disko": "disko",
+        "home-manager": "home-manager",
+        "nixpkgs": "nixpkgs",
+        "pluto": "pluto",
+        "registry": "registry",
+        "sops-nix": "sops-nix",
+        "testing": "testing",
+        "universal": "universal"
+      }
+    },
+    "security-host": {
+      "inputs": {
+        "nixpkgs": [
+          "registry",
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "path": "../security-host",
+        "type": "path"
+      },
+      "original": {
+        "path": "../security-host",
+        "type": "path"
+      },
+      "parent": [
+        "registry"
+      ]
     },
     "sops-nix": {
       "inputs": {
@@ -277,9 +410,24 @@
         "type": "github"
       }
     },
+    "systems": {
+      "locked": {
+        "lastModified": 1681028828,
+        "narHash": "sha256-Vy1rq5AaRuLzOxct8nz4T6wlgyUR7zLU309k9mBC768=",
+        "owner": "nix-systems",
+        "repo": "default",
+        "rev": "da67096a3b9bf56a91d16901293e51ba5b49a27e",
+        "type": "github"
+      },
+      "original": {
+        "owner": "nix-systems",
+        "repo": "default",
+        "type": "github"
+      }
+    },
     "testing": {
       "inputs": {
-        "desktop": "desktop",
+        "desktop": "desktop_2",
         "nixpkgs": [
           "nixpkgs"
         ]
@@ -290,6 +438,22 @@
       },
       "original": {
         "path": "./roles/testing",
+        "type": "path"
+      },
+      "parent": []
+    },
+    "universal": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "path": "./modules/universal",
+        "type": "path"
+      },
+      "original": {
+        "path": "./modules/universal",
         "type": "path"
       },
       "parent": []
@@ -297,34 +461,38 @@
     "web-utils": {
       "inputs": {
         "nixpkgs": [
+          "registry",
           "nixpkgs"
         ],
         "zen-browser": "zen-browser"
       },
       "locked": {
-        "path": "./modules/web-utils",
+        "path": "../web-utils",
         "type": "path"
       },
       "original": {
-        "path": "./modules/web-utils",
+        "path": "../web-utils",
         "type": "path"
       },
-      "parent": []
+      "parent": [
+        "registry"
+      ]
     },
     "zen-browser": {
       "inputs": {
         "home-manager": "home-manager_3",
         "nixpkgs": [
+          "registry",
           "web-utils",
           "nixpkgs"
         ]
       },
       "locked": {
-        "lastModified": 1777218171,
-        "narHash": "sha256-+JGU5Cw6Zm3XVl3xBCkbY7/lTxfLQpjuuhF0IB4dJ8k=",
+        "lastModified": 1777564084,
+        "narHash": "sha256-O9VRkxg+2j+sh+c73wi4VeIBECoqW2PlnCR9Qe1nQKA=",
         "owner": "0xc000022070",
         "repo": "zen-browser-flake",
-        "rev": "8a8e30610393c7f1a766a119dea37bf82d0ebcf6",
+        "rev": "d93443c0f6fdb3b179bed68856f322dba4842612",
         "type": "github"
       },
       "original": {
