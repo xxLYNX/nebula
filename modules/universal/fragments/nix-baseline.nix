@@ -37,4 +37,9 @@
   #   - ssh-to-age: convert SSH host pubkey to age pubkey during enrollment
   #   - mkpasswd: hash passwords for sops-encrypted user password files
   environment.systemPackages = with pkgs; [ git curl sops ssh-to-age mkpasswd ];
+
+  # ssh-agent as a systemd user service — required on every machine so that
+  # ssh-add keys (GitHub, remote servers) persist across terminal sessions.
+  # Enrollment and fleet operations depend on this being available.
+  programs.ssh.startAgent = true;
 }
