@@ -23,11 +23,11 @@
 
 keys:
   # --- Machine age keys (from SSH host ed25519 keys) ---
-  - &pluto_host     age1AAAA_PLACEHOLDER_run_ssh_to_age_for_pluto    # TODO: fill in
-  - &testbed_host   age1AAAA_PLACEHOLDER_run_ssh_to_age_for_testbed  # TODO: fill in
+  - &pluto_host age1AAAA_PLACEHOLDER_run_ssh_to_age_for_pluto # TODO: fill in
+  - &testbed_host age1AAAA_PLACEHOLDER_run_ssh_to_age_for_testbed # TODO: fill in
 
   # --- YubiKey management keys ---
-  - &yubikey_primary age1yubikey1q_PLACEHOLDER_run_age_plugin_yubikey  # TODO: fill in
+  - &yubikey_primary age1yubikey1q_PLACEHOLDER_run_age_plugin_yubikey # TODO: fill in
 
 creation_rules:
   # Management secrets: require both the YubiKey and the pluto host key (threshold=2).
@@ -48,7 +48,7 @@ creation_rules:
     key_groups:
       - age:
           - *pluto_host
-          - *yubikey_primary  # admin escape hatch
+          - *yubikey_primary # admin escape hatch
         threshold: 1
 
   # testbed machine secrets: single-machine.
@@ -56,7 +56,7 @@ creation_rules:
     key_groups:
       - age:
           - *testbed_host
-          - *yubikey_primary  # admin escape hatch
+          - *yubikey_primary # admin escape hatch
         threshold: 1
 
   # Fallback: any other secret must be encrypted to the YubiKey at minimum.
