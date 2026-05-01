@@ -71,7 +71,18 @@
       # nixpkgs.config.allowUnfree, nix.settings, nix.gc, and the git/curl
       # systemPackages are provided by the universal module (modules/universal/).
 
-      services.openssh.enable = false;
+      # openssh must be enabled so NixOS generates /etc/ssh/ssh_host_ed25519_key
+      # at activation. sops-nix derives its age identity from that key, and the
+      # enroll script derives this machine's SOPS recipient from its public half.
+      # openFirewall defaults to false, so port 22 is not exposed externally.
+      services.openssh = {
+        enable = true;
+        openFirewall = false;
+        settings = {
+          PasswordAuthentication = false;
+          PermitRootLogin = "no";
+        };
+      };
       security.sudo.wheelNeedsPassword = true;
       services.avahi = { enable = true; nssmdns4 = true; openFirewall = true; };
 

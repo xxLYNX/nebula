@@ -13,6 +13,9 @@ secrets/**/*.yaml
 # Nix
 result
 
+# Scratch / debug output directories
+errors/
+
 # Old configs (contain their own .git, not submodules)
 pluto-config/
 old-config/
