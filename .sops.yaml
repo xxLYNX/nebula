@@ -1,4 +1,4 @@
-# .sops.yaml — cleaned and fixed
+# .sops.yaml — clean & working (temporary single-key management until YubiKey arrives)
 
 keys:
   - &pluto_host   age1wc833nmhyfgz8klhegnjn8fnyfful7v9dymk2w3jrgn0r7gjwfgq9tgqrz
@@ -6,20 +6,21 @@ keys:
   - &yubikey      age1yubikey1q_PLACEHOLDER_run_age_plugin_yubikey # TODO: fill when YubiKey arrives
 
 creation_rules:
-  # pluto machine secrets → only pluto host key
+  # Machine-local secrets — host key only
   - path_regex: ^secrets/machines/pluto/.*\.yaml$
     age: [*pluto_host]
 
-  # testbed machine secrets → only testbed host key
   - path_regex: ^secrets/machines/testbed/.*\.yaml$
     age: [*testbed_host]
 
-  # management secrets → Shamir threshold 2 (needs both YubiKey + pluto)
+  # Management secrets — TEMPORARILY single key (pluto host only)
+  # When YubiKey arrives, change this to Shamir threshold 2:
+  #   key_groups:
+  #     - age: [*yubikey, *pluto_host]
+  #   shamir_threshold: 2
   - path_regex: ^secrets/management/.*\.yaml$
-    key_groups:
-      - age: [*yubikey, *pluto_host]
-    shamir_threshold: 2
+    age: [*pluto_host]
 
-  # fallback for anything else
+  # Fallback
   - path_regex: ^secrets/.*$
     age: [*yubikey]
