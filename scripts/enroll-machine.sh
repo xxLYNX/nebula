@@ -140,6 +140,18 @@ trap - ERR
 # ── 5. commit and push ─────────────────────────────────────────────────────────
 cd "$REPO"
 
+# Ensure git has a committer identity. On a freshly installed machine git
+# user.name/email are not set. Set them locally (repo-scope only, not global)
+# so the enrollment commit doesn't fail. Use the machine hostname as a
+# recognisable identity; the user can run 'git config --global ...' later.
+if ! git config user.email >/dev/null 2>&1; then
+  warn "git user.email not set — configuring repo-local identity as $HOSTNAME@nebula"
+  git config user.email "$HOSTNAME@nebula"
+fi
+if ! git config user.name >/dev/null 2>&1; then
+  git config user.name "$HOSTNAME"
+fi
+
 # The encrypted .yaml is gitignored by default to prevent accidental plaintext
 # commits. Force-add it here — it's safe to commit once encrypted.
 git add "$SOPS_YAML"
