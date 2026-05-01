@@ -4,10 +4,14 @@
 *.tfstate
 *.tfstate.backup
 
-# Secrets — ignore encrypted/plaintext .yaml files to prevent accidental commits.
-# The secrets/ directory itself is tracked so README and .template files are versioned.
-# Encrypted .yaml files (safe to commit) must be added explicitly: git add -f secrets/...
-secrets/**/*.yaml
+# Secrets
+# We commit the *encrypted* .yaml files (standard sops-nix practice).
+# Only ignore plaintext backups or temporary decrypted files.
+secrets/**/*.decrypted
+secrets/**/*.bak
+secrets/**/.sops.yaml   # optional editor backup
+
+# Still ignore age private keys (never commit these)
 *.age
 
 # Nix
