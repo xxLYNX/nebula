@@ -244,18 +244,36 @@ colmena apply-local --sudo
 
 # ── 7. verify SOPS actually worked ────────────────────────────────────────────
 echo ""
+info "=== sops-nix activation log ==="
+sudo journalctl -b -u sops-install-secrets --no-pager 2>&1 || true
+
+echo ""
+info "=== /run/secrets-for-users/ ==="
+sudo ls -la /run/secrets-for-users/ 2>&1 || echo "(directory does not exist)"
+
+echo ""
+info "=== /run/secrets/ ==="
+sudo ls -la /run/secrets/ 2>&1 || echo "(directory does not exist)"
+
+echo ""
+info "=== sops age identity (should match enrolled key) ==="
+sudo cat /run/current-system/etc/sops-nix/age-keys.txt 2>/dev/null \
+  || sudo cat /run/agenix/age.key 2>/dev/null \
+  || echo "(age key file not found at standard paths)"
+
+echo ""
 info "Verifying SOPS decryption..."
 
 SECRET_RUNTIME="/run/secrets-for-users/user_password_hash"
 
-# sops-nix writes decrypted secrets to /run/secrets/ at activation.
-# If the file is missing, activation failed silently (shouldn't happen with
-# neededForUsers = true, but check anyway).
 [[ -f "$SECRET_RUNTIME" ]] \
   || die "Verification failed: $SECRET_RUNTIME does not exist.
-sops-nix did not decrypt the secret.
-Check activation logs: journalctl -b -u sops-install-secrets
-Also verify machineEnrolled: nix eval .#colmenaHive.pluto._module.args.machineEnrolled"
+sops-nix did not decrypt the secret. See the logs above for the reason.
+Common causes:
+  - sops-nix evaluated machineEnrolled=false (enrolled marker not visible to Nix)
+  - age key mismatch (host key fingerprint changed or wrong key in .sops.yaml)
+  - machine.yaml encrypted for different recipients
+Check: journalctl -b -u sops-install-secrets"
 
 RUNTIME_HASH="$(cat "$SECRET_RUNTIME")"
 
