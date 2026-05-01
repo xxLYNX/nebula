@@ -76,32 +76,50 @@ command -v mkpasswd >/dev/null \
   || die "mkpasswd not found. Same as above."
 
 # ── preflight: verify git remote is reachable before doing any secrets work ───
-# git push requires your SSH key to be authorised on the remote (GitHub deploy
-# key or personal key in ssh-agent). Check now so we fail fast with a clear
-# message rather than hitting auth failure after secrets are already encrypted.
+# git push requires SSH auth. GitHub dropped password/HTTPS auth years ago.
+# Check now so we fail fast with a clear message rather than hitting auth
+# failure after secrets are already encrypted.
 info "Checking git remote access..."
 GIT_REMOTE="$(git -C "$REPO" remote get-url origin 2>/dev/null)" \
   || die "No git remote 'origin' configured in $REPO.
-Run: git remote add origin <your-repo-url>"
+Run: git remote add origin git@github.com:<user>/<repo>.git"
+
+# Auto-convert HTTPS GitHub remotes to SSH. HTTPS requires a PAT and is
+# awkward on headless machines; SSH deploy keys are the correct approach.
+# e.g. https://github.com/user/repo.git -> git@github.com:user/repo.git
+if [[ "$GIT_REMOTE" =~ ^https://github\.com/(.+)$ ]]; then
+  SSH_REMOTE="git@github.com:${BASH_REMATCH[1]}"
+  warn "Remote is HTTPS ($GIT_REMOTE)"
+  warn "GitHub no longer supports password auth for HTTPS git operations."
+  warn "Switching remote to SSH: $SSH_REMOTE"
+  git -C "$REPO" remote set-url origin "$SSH_REMOTE"
+  GIT_REMOTE="$SSH_REMOTE"
+  info "Remote updated. Re-run this script if you haven't set up a deploy key yet."
+fi
 
 # ls-remote performs a real auth round-trip without writing anything.
 if ! git -C "$REPO" ls-remote --exit-code origin HEAD >/dev/null 2>&1; then
-  die "Cannot reach git remote: $GIT_REMOTE
+  die "Cannot reach git remote via SSH: $GIT_REMOTE
 
-The push step requires SSH access to GitHub. Set this up before enrolling:
+Set up a deploy key for this machine, then re-run this script:
 
-  Option A — personal key (if your key is on this machine):
-    eval \"\$(ssh-agent -s)\"
-    ssh-add ~/.ssh/id_ed25519       # or whichever key is authorised on GitHub
-    ssh -T git@github.com           # should say 'Hi <user>! You have authenticated'
+  1. Generate a deploy key (no passphrase — this machine uses it unattended):
+       ssh-keygen -t ed25519 -f ~/.ssh/nebula_deploy -N ''
 
-  Option B — deploy key (recommended for servers):
-    ssh-keygen -t ed25519 -f ~/.ssh/nebula_deploy -N ''
-    cat ~/.ssh/nebula_deploy.pub    # add this as a read/write deploy key on GitHub
-    # Add to ~/.ssh/config:
-    #   Host github.com
-    #     IdentityFile ~/.ssh/nebula_deploy
-    ssh -T git@github.com           # verify, then re-run this script"
+  2. Add the public key to GitHub as a deploy key with write access:
+       cat ~/.ssh/nebula_deploy.pub
+       # github.com → repo → Settings → Deploy keys → Add deploy key (Allow write access)
+
+  3. Configure SSH to use it:
+       mkdir -p ~/.ssh && chmod 700 ~/.ssh
+       cat >> ~/.ssh/config << 'EOF'
+Host github.com
+  IdentityFile ~/.ssh/nebula_deploy
+  IdentitiesOnly yes
+EOF
+
+  4. Verify:
+       ssh -T git@github.com   # should say: Hi <user>! You have successfully authenticated"
 fi
 info "Git remote reachable — proceeding."
 
