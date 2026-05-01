@@ -23,7 +23,7 @@
 
 keys:
   # --- Machine age keys (from SSH host ed25519 keys) ---
-  - &pluto_host age1AAAA_PLACEHOLDER_run_ssh_to_age_for_pluto # TODO: fill in
+  - &pluto_host age1wc833nmhyfgz8klhegnjn8fnyfful7v9dymk2w3jrgn0r7gjwfgq9tgqrz # TODO: fill in
   - &testbed_host age1AAAA_PLACEHOLDER_run_ssh_to_age_for_testbed # TODO: fill in
 
   # --- YubiKey management keys ---
