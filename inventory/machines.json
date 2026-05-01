@@ -50,7 +50,11 @@
         "type": "nixos",
         "system": "x86_64-linux",
         "role": "pluto",
-        "modules": []
+        "modules": [
+          "desktop",
+          "web-utils",
+          "maintenance"
+        ]
       },
       "hardware": {
         "form": "desktop",
