@@ -19,6 +19,7 @@
         "system": "x86_64-linux",
         "role": "testing",
         "modules": [
+          "desktop",
           "web-utils",
           "maintenance"
         ]

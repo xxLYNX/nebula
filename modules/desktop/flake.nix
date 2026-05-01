@@ -30,7 +30,7 @@
     # ── System NixOS module ────────────────────────────────────────────────
     # Composes: Hyprland/portals/audio/networking, system packages, nebula Qt theme.
     # All config lives in system/ and themes/nebula/system.nix; options live here.
-    nixosModules.default = { config, pkgs, lib, ... }:
+    nixosModules.default = { config, pkgs, lib, primaryUser, ... }:
     let cfg = config.services.desktop or {}; in {
       imports = (importDir ./system) ++ [
         ./themes/nebula/system.nix
@@ -39,7 +39,7 @@
       options.services.desktop = {
         enable = lib.mkOption {
           type    = lib.types.bool;
-          default = false;
+          default = true;
           description = "Master switch for the desktop module.";
         };
         packages = lib.mkOption {
@@ -97,6 +97,15 @@
             default = true;
             description = "Apply the nebula theme (Qt, GTK, cursor). Disable to manage theming yourself.";
           };
+        };
+      };
+
+      # Wire the home-manager desktop module for the primary user when desktop is enabled.
+      # This means the role does not need to import or configure the home-manager module directly.
+      config = lib.mkIf (cfg.enable or true) {
+        home-manager.users.${primaryUser} = {
+          imports = [ self.homeManagerModules.default ];
+          homeManager.desktop.enable = true;
         };
       };
     };

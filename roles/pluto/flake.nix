@@ -1,16 +1,11 @@
 {
-  description = "pluto role flake - primary workstation NixOS module fragment; desktop + nixvim enabled by default";
+  description = "pluto role flake - primary workstation NixOS module fragment";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
-
-    desktop = {
-      url = "path:../../modules/desktop";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
   };
 
-  outputs = { self, nixpkgs, desktop, ... }: {
+  outputs = { self, nixpkgs, ... }: {
     nixosModules.default = { config, pkgs, primaryUser, machine, ... }:
     let
       lib = pkgs.lib;
@@ -19,8 +14,6 @@
       swapSize   = if machine != null then (machine.hardware.disk.swap   or "8G")   else "8G";
       rootFormat = if machine != null then (machine.hardware.disk.format or "xfs")  else "xfs";
     in {
-      imports = [ desktop.nixosModules.default ];
-
       # Disk partitioning via disko
       disko.devices.disk.main = {
         type = "disk";
@@ -91,23 +84,11 @@
 
       environment.systemPackages = with pkgs; [ git curl ];
 
-      services.desktop = {
-        enable = true;
-        hyprland = {
-          enable          = true;
-          withUWSM        = true;
-          xwaylandEnable  = true;
-        };
-        displayManager.enable = true;
-      };
-
       services.openssh.enable = false;
       security.sudo.wheelNeedsPassword = true;
       services.avahi = { enable = true; nssmdns4 = true; openFirewall = true; };
 
       home-manager.users.${primaryUser} = {
-        imports = [ desktop.homeManagerModules.default ];
-        homeManager.desktop.enable = true;
         home.stateVersion = "26.05";
       };
     };

@@ -1,18 +1,11 @@
 {
-  description = "Testing role flake - generic NixOS module fragment for test/dev machines; includes the desktop module by default and accepts a `desktop` arg to customize behavior";
+  description = "Testing role flake - generic NixOS module fragment for test/dev machines";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
-
-    # Import the reusable desktop module from the repository's modules directory.
-    # Relative path from `roles/testing` -> `modules/desktop` is ../../modules/desktop
-    desktop = {
-      url = "path:../../modules/desktop";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
   };
 
-  outputs = { self, nixpkgs, desktop, ... }: {
+  outputs = { self, nixpkgs, ... }: {
     nixosModules.default = { config, pkgs, primaryUser, machine, ... }:
     let
       lib = pkgs.lib;
@@ -21,10 +14,6 @@
       swapSize   = if machine != null then (machine.hardware.disk.swap   or "8G")   else "8G";
       rootFormat = if machine != null then (machine.hardware.disk.format or "xfs")  else "xfs";
     in {
-      # Pull in the desktop module as an import so NixOS evaluates it in the
-      # normal module system (options/config merging) rather than calling it manually.
-      imports = [ desktop.nixosModules.default ];
-
       # Disk partitioning via disko
       disko.devices.disk.main = {
         type = "disk";
@@ -115,17 +104,6 @@
       # colmena is pinned via mkHost in the root flake (matches flake input version).
       environment.systemPackages = with pkgs; [ git curl ];
 
-      # Enable the desktop module by default for the testing role
-      services.desktop = {
-        enable = true;
-        hyprland = {
-          enable = true;
-          withUWSM = true;
-          xwaylandEnable = true;
-        };
-        displayManager.enable = true;
-      };
-
       # SSH daemon — needed for remote `colmena apply`. Not required for apply-local.
       # To enable passwordless remote deployment add your SSH public key via:
       #   users.users.${primaryUser}.openssh.authorizedKeys.keys = [ "ssh-ed25519 AAAA..." ];
@@ -143,10 +121,6 @@
       # ~/.config/hypr/hyprland.conf is managed from the repo rather than
       # falling back to Hyprland's auto-generated default config.
       home-manager.users.${primaryUser} = {
-        imports = [
-          desktop.homeManagerModules.default
-        ];
-        homeManager.desktop.enable = true;
         # stateVersion for home-manager must match the NixOS release in use.
         home.stateVersion = "26.05";
       };
