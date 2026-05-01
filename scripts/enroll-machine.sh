@@ -98,21 +98,33 @@ if [[ ! -f "$USER_KEY" ]]; then
   ssh-keygen -t ed25519 -f "$USER_KEY" -N '' -C "$HOSTNAME@nebula"
 fi
 
-# Check if GitHub already accepts this key.
-if ! ssh -o BatchMode=yes -o ConnectTimeout=5 -T git@github.com 2>&1 \
-     | grep -q 'successfully authenticated'; then
+# ssh_check: accept GitHub's host key on first connect (populates known_hosts)
+# then check for the authenticated greeting. StrictHostKeyChecking=accept-new
+# trusts new hosts but rejects changed keys (protects against MITM on retry).
+ssh_github_check() {
+  ssh -o BatchMode=yes \
+      -o ConnectTimeout=5 \
+      -o StrictHostKeyChecking=accept-new \
+      -T git@github.com 2>&1
+}
+
+SSH_OUT="$(ssh_github_check)"
+if ! echo "$SSH_OUT" | grep -q 'successfully authenticated'; then
   echo ""
   warn "GitHub does not yet have this machine's SSH public key."
-  warn "Add the following key to GitHub → repo → Settings → Deploy keys"
-  warn "(tick 'Allow write access'), then press Enter to continue:"
+  warn "Add the following key to GitHub → your account → Settings → SSH and GPG keys"
+  warn "(or repo → Settings → Deploy keys if you prefer repo-scoped access):"
   echo ""
   cat "${USER_KEY}.pub"
   echo ""
+  warn "SSH output was: $SSH_OUT"
   read -rp $'[enroll] Press Enter once the key is added to GitHub... '
   # Verify again after user confirms.
-  ssh -o BatchMode=yes -o ConnectTimeout=5 -T git@github.com 2>&1 \
-    | grep -q 'successfully authenticated' \
-    || die "Still cannot authenticate to GitHub. Check the deploy key and try again."
+  SSH_OUT="$(ssh_github_check)"
+  echo "$SSH_OUT" | grep -q 'successfully authenticated' \
+    || die "Still cannot authenticate to GitHub.
+SSH output: $SSH_OUT
+Check that the key was saved correctly and try: ssh -T git@github.com"
 fi
 info "GitHub SSH access confirmed — proceeding."
 
