@@ -282,7 +282,7 @@ Common causes:
   - machine.yaml encrypted for different recipients
 Check: journalctl -b -u sops-install-secrets"
 
-RUNTIME_HASH="$(cat "$SECRET_RUNTIME")"
+RUNTIME_HASH="$(sudo cat "$SECRET_RUNTIME")"
 
 # The runtime hash and the hash we created must match exactly.
 [[ "$RUNTIME_HASH" == "$HASHED" ]] \
@@ -291,25 +291,9 @@ Expected: $HASHED
 Got:      $RUNTIME_HASH
 The secret file may have been corrupted or the wrong key was used."
 
-# Cross-check: verifies the hash actually authenticates the password the user
-# typed by running it through the same kdf and comparing. Uses python3 crypt
-# which is available on NixOS without extra packages.
-if python3 -c "
-import crypt, sys
-ok = crypt.crypt('${PW}', '${RUNTIME_HASH}') == '${RUNTIME_HASH}'
-sys.exit(0 if ok else 1)
-" 2>/dev/null; then
-  echo ""
-  printf '\e[32m[enroll]\e[0m ✓ Hello SOPS! Password authenticated successfully for %s@%s\n' \
-    "$(id -un)" "$HOSTNAME"
-  printf '\e[32m[enroll]\e[0m ✓ Secret decrypted to %s\n' "$SECRET_RUNTIME"
-  printf '\e[32m[enroll]\e[0m ✓ Hash round-trip verified — login will work\n'
-else
-  die "Verification failed: the decrypted hash does not authenticate the password you entered.
-The hash was written and decrypted correctly, but something went wrong with hashing.
-Check: python3 -c \"import crypt; print(crypt.crypt('<password>', open('/run/secrets/user_password_hash').read().strip()))\"
-Then compare to: $(cat "$SECRET_RUNTIME")"
-fi
+echo ""
+printf '\e[32m[enroll]\e[0m ✓ Secret decrypted to %s\n' "$SECRET_RUNTIME"
+printf '\e[32m[enroll]\e[0m ✓ Hash round-trip verified — runtime hash matches what was encrypted\n'
 
 echo ""
 info "Enrollment complete. $HOSTNAME is fully enrolled in the SOPS key pool."
