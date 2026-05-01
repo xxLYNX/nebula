@@ -101,12 +101,29 @@ read -r -s -p "  Confirm:  " PW2; echo
 
 HASHED="$(printf '%s' "$PW" | mkpasswd -m sha-512 -s)"
 
+# Sanity-check the hash — mkpasswd should always produce a string starting with '$'.
+# If it doesn't (e.g., wrong flags or old mkpasswd variant), abort before writing.
+[[ "$HASHED" == \$* ]] \
+  || die "mkpasswd produced unexpected output: '$HASHED'
+Expected a crypt hash beginning with '\$'. Check your mkpasswd version."
+
 # ── 4. write plaintext yaml and encrypt ───────────────────────────────────────
-sed "s|PLAINTEXT_TEMPLATE_DO_NOT_COMMIT|${HASHED}|" "$TEMPLATE" > "$SECRET_FILE"
+# If anything from here to 'trap - ERR' fails, clean up the plaintext file
+# immediately so credentials are never left on disk in plaintext.
+trap 'rm -f "$SECRET_FILE"
+      printf "\e[31m[enroll]\e[0m ERROR: Cleaned up plaintext %s\n" "$SECRET_FILE" >&2' ERR
+
+# Write minimal valid YAML directly rather than substituting into the template
+# via sed — sed treats '&' and '\' as metacharacters in the replacement string,
+# which could corrupt a hash that contains those characters.
+printf 'user_password_hash: "%s"\n' "$HASHED" > "$SECRET_FILE"
 
 info "Encrypting $SECRET_FILE ..."
 sops --encrypt --in-place "$SECRET_FILE"
 info "Encrypted OK."
+
+# File is now encrypted — disable the plaintext cleanup trap.
+trap - ERR
 
 # ── 5. commit and push ─────────────────────────────────────────────────────────
 cd "$REPO"

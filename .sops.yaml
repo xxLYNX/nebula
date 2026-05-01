@@ -44,11 +44,15 @@ creation_rules:
     threshold: 2
 
   # pluto machine secrets: single-machine, decryptable with pluto's host key alone.
+  # To add YubiKey as an admin escape hatch once provisioned, add a second key_group:
+  #   - age:
+  #       - *yubikey_primary
+  #     threshold: 1
+  # and set threshold: 1 at the file level (only one group needed to decrypt).
   - path_regex: ^secrets/machines/pluto/.*\.yaml$
     key_groups:
       - age:
           - *pluto_host
-          - *yubikey_primary # admin escape hatch
         threshold: 1
 
   # testbed machine secrets: single-machine.
@@ -56,7 +60,6 @@ creation_rules:
     key_groups:
       - age:
           - *testbed_host
-          - *yubikey_primary # admin escape hatch
         threshold: 1
 
   # Fallback: any other secret must be encrypted to the YubiKey at minimum.
