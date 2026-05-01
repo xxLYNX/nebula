@@ -173,7 +173,12 @@
                                 },
                                 "format": {
                                     "type": "string",
-                                    "enum": ["xfs", "ext4", "btrfs", "bcachefs"],
+                                    "enum": [
+                                        "xfs",
+                                        "ext4",
+                                        "btrfs",
+                                        "bcachefs"
+                                    ],
                                     "default": "xfs",
                                     "description": "Root filesystem format used by disko. Defaults to xfs."
                                 }

@@ -21,10 +21,10 @@ terraform/                 # One-shot provisioner for new machines (nixos-anywhe
 
 ## About the stack
 
-### NixOS — the operating system
+### NixOS — declarative operating system
 NixOS is a Linux distribution where the entire system — packages, services, users, kernel parameters — is declared in Nix code and built atomically. There is no imperative `apt install` or config file edited in place. Every rebuild produces a new system generation that can be rolled back in the boot menu. This makes machines reproducible: the same config always produces the same system, on any hardware.
 
-### home-manager — user environment management
+### home-manager — declarative user environment management
 home-manager extends NixOS's declarative model into the user's home directory. Dotfiles, shell config, application settings, and user services are all declared in Nix and applied atomically alongside the system. In nebula it is integrated as a NixOS module (not run as a standalone tool), so `colmena apply-local` rebuilds both the system and the user environment in one step with no separate `home-manager switch`.
 
 ### disko — declarative disk partitioning
