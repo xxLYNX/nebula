@@ -9,6 +9,7 @@
     let
       cfg = config.services.maintenance;
     in {
+      imports = [ ./firmware.nix ];
 
       # ── Options ─────────────────────────────────────────────────────────────
       options.services.maintenance = {
