@@ -27,9 +27,10 @@ set -euo pipefail
 # that provides them. Fully transparent — the user doesn't need to do anything.
 if ! command -v ssh-to-age >/dev/null 2>&1 \
 || ! command -v sops       >/dev/null 2>&1 \
-|| ! command -v mkpasswd   >/dev/null 2>&1; then
+|| ! command -v mkpasswd   >/dev/null 2>&1 \
+|| ! command -v jq         >/dev/null 2>&1; then
   echo "[enroll] Required tools not in PATH — re-execing via nix shell (this downloads once)..."
-  exec nix shell nixpkgs#sops nixpkgs#ssh-to-age nixpkgs#mkpasswd \
+  exec nix shell nixpkgs#sops nixpkgs#ssh-to-age nixpkgs#mkpasswd nixpkgs#jq \
     --command bash "$0" "$@"
 fi
 
@@ -213,20 +214,10 @@ git add -f "$SECRET_FILE"
 # Set enrolled=true in inventory/machines.json.
 # flake.nix reads machine.enrolled directly from the inventory — no
 # builtins.pathExists magic, which is unreliable for interpolated paths.
+# jq is guaranteed present here (added to the auto-bootstrap nix shell above).
 INVENTORY="$REPO/inventory/machines.json"
-if command -v jq >/dev/null 2>&1; then
-  jq --arg h "$HOSTNAME" '.machines[$h].enrolled = true' "$INVENTORY" > "${INVENTORY}.tmp" \
-    && mv "${INVENTORY}.tmp" "$INVENTORY"
-else
-  # jq not available: use python (present on all NixOS installs).
-  python3 -c "
-import json, sys
-with open('$INVENTORY') as f: d = json.load(f)
-d['machines']['$HOSTNAME']['enrolled'] = True
-with open('$INVENTORY', 'w') as f: json.dump(d, f, indent=2)
-print()
-"
-fi
+jq --arg h "$HOSTNAME" '.machines[$h].enrolled = true' "$INVENTORY" > "${INVENTORY}.tmp" \
+  && mv "${INVENTORY}.tmp" "$INVENTORY"
 git add "$INVENTORY"
 
 # Keep a human-readable marker alongside machine.yaml for reference.
