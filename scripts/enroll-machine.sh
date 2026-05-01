@@ -108,7 +108,7 @@ ssh_github_check() {
       -T git@github.com 2>&1
 }
 
-SSH_OUT="$(ssh_github_check)"
+SSH_OUT="$(ssh_github_check)" || true  # ssh -T always exits 1; don't let set -e kill us
 if ! echo "$SSH_OUT" | grep -q 'successfully authenticated'; then
   echo ""
   warn "GitHub does not yet have this machine's SSH public key."
@@ -120,7 +120,7 @@ if ! echo "$SSH_OUT" | grep -q 'successfully authenticated'; then
   warn "SSH output was: $SSH_OUT"
   read -rp $'[enroll] Press Enter once the key is added to GitHub... '
   # Verify again after user confirms.
-  SSH_OUT="$(ssh_github_check)"
+  SSH_OUT="$(ssh_github_check)" || true
   echo "$SSH_OUT" | grep -q 'successfully authenticated' \
     || die "Still cannot authenticate to GitHub.
 SSH output: $SSH_OUT
