@@ -75,6 +75,36 @@ command -v sops >/dev/null \
 command -v mkpasswd >/dev/null \
   || die "mkpasswd not found. Same as above."
 
+# ── preflight: verify git remote is reachable before doing any secrets work ───
+# git push requires your SSH key to be authorised on the remote (GitHub deploy
+# key or personal key in ssh-agent). Check now so we fail fast with a clear
+# message rather than hitting auth failure after secrets are already encrypted.
+info "Checking git remote access..."
+GIT_REMOTE="$(git -C "$REPO" remote get-url origin 2>/dev/null)" \
+  || die "No git remote 'origin' configured in $REPO.
+Run: git remote add origin <your-repo-url>"
+
+# ls-remote performs a real auth round-trip without writing anything.
+if ! git -C "$REPO" ls-remote --exit-code origin HEAD >/dev/null 2>&1; then
+  die "Cannot reach git remote: $GIT_REMOTE
+
+The push step requires SSH access to GitHub. Set this up before enrolling:
+
+  Option A — personal key (if your key is on this machine):
+    eval \"\$(ssh-agent -s)\"
+    ssh-add ~/.ssh/id_ed25519       # or whichever key is authorised on GitHub
+    ssh -T git@github.com           # should say 'Hi <user>! You have authenticated'
+
+  Option B — deploy key (recommended for servers):
+    ssh-keygen -t ed25519 -f ~/.ssh/nebula_deploy -N ''
+    cat ~/.ssh/nebula_deploy.pub    # add this as a read/write deploy key on GitHub
+    # Add to ~/.ssh/config:
+    #   Host github.com
+    #     IdentityFile ~/.ssh/nebula_deploy
+    ssh -T git@github.com           # verify, then re-run this script"
+fi
+info "Git remote reachable — proceeding."
+
 # ── 1. derive age pubkey from ssh host key ─────────────────────────────────────
 HOST_PUB="/etc/ssh/ssh_host_ed25519_key.pub"
 [[ -f "$HOST_PUB" ]] \
