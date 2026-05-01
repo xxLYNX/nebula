@@ -116,3 +116,27 @@ Not currently in use. Intended future role: bootstrapping pre-NixOS machines (in
 ## Pending migration
 
 See `docs/pending.md` for a full checklist of software and settings from the previous `pluto-config` not yet ported to nebula modules.
+
+# Management
+Everything you need to know about using nebula.
+## Enrollment
+The exact flow (after a fresh NixOS install with bootstrap password):
+> Remote
+1. SSH in with the bootstrap password (changeme).
+2. Run your enrollment script on the target machine:Bash./scripts/enroll-machine.sh <hostname>(It should create secrets/machines/<hostname>/machine.yaml with the new hashed password and the enrolled marker file.)
+3. Commit the new secret + marker: `add secrets/machines/<hostname>/
+git commit -m "enroll: <hostname>"` then `git push`
+4. Rebuild the machine:`Bashcolmena apply --on <hostname> --sudo`
+# or colmena apply-local --sudo if you're on the machine itself
+The machine will now:
+- Set machineEnrolled = true
+- Pull the real user_password_hash from sops
+- Apply users.mutableUsers = false
+- Switch the user password from “changeme” to the real one
+> Physical
+1. Boot from NixISO
+2. `git clone https://github.com/xxLYNX/nebula.git && cd ~/nebula`
+3. Run your enrollment script on the target machine:Bash./scripts/enroll-machine.sh <hostname>(It should create secrets/machines/<hostname>/machine.yaml with the new hashed password and the enrolled marker file.)
+
+
+You no longer need any manual steps for the user password — the script + universal fragment handle everything.
