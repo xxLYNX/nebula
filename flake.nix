@@ -36,6 +36,10 @@
     };
 
     # Feature modules (composable, added to host modules in inventory)
+    desktop = {
+      url = "path:./modules/desktop";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
     web-utils = {
       url = "path:./modules/web-utils";
       inputs.nixpkgs.follows = "nixpkgs";
