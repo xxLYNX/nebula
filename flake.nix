@@ -48,6 +48,7 @@
 
   outputs = { self, nixpkgs, colmena, disko, sops-nix, home-manager, universal, registry, ... } @ inputs:
   let
+    lib = nixpkgs.lib;
     # inventory is the single source of truth for all machines in the fleet
     inventory = builtins.fromJSON (builtins.readFile ./inventory/machines.json);
 
@@ -60,10 +61,10 @@
     mkHost = name: machine:
     let
       # Path to this machine's encrypted secrets file in the repo.
-      # Used as sops.defaultSopsFile so sops.secrets.* entries don't need to
-      # repeat the path. Falls back to an empty file if the machine hasn't been
-      # enrolled yet (scripts/enroll-machine.sh creates and encrypts it).
+      # builtins.pathExists is evaluated at flake eval time — the file must be committed
+      # to git (not just present on disk) for Nix to see it in the store.
       secretsFile = ./secrets/machines + "/${machine.hostname}/machine.yaml";
+      enrolled    = builtins.pathExists secretsFile;
     in {
       imports = [
         ./hosts/${machine.hostname}/configuration.nix
@@ -88,8 +89,12 @@
       # Pass arguments to modules produced by flakes in `modules`.
       _module.args = {
         inherit inputs;
-        primaryUser = builtins.head machine.users.admin;
-        machine = machine; # whole instance object — role flakes read hardware.disk.*, os.*, users.*, etc.
+        primaryUser     = builtins.head machine.users.admin;
+        machine         = machine; # whole instance object — role flakes read hardware.disk.*, os.*, users.*, etc.
+        # True once scripts/enroll-machine.sh has run and committed the encrypted
+        # secrets file for this machine. Roles use this to switch from the bootstrap
+        # plaintext password to sops hashedPasswordFile without breaking pre-enrollment applies.
+        machineEnrolled = enrolled;
       };
 
       # Provide home-manager with helpful extra args so home-manager fragments can access inputs and primaryUser.
@@ -98,13 +103,10 @@
 
       networking.hostName = machine.hostname;
 
-      # Set the machine's default sops secrets file.
-      # builtins.pathExists guards against flake eval failures on machines that
-      # haven't run enroll-machine.sh yet. Once enrolled (file committed to git),
-      # sops.secrets.* entries in the role can omit sopsFile entirely.
-      sops.defaultSopsFile =
-        if builtins.pathExists secretsFile then secretsFile
-        else builtins.toFile "no-machine-secrets.yaml" "";
+      # Only set defaultSopsFile when enrolled — sops-nix validates the file at
+      # activation even if no secrets are declared, so pointing at an empty/missing
+      # file on unenrolled machines would break every apply.
+      sops.defaultSopsFile = lib.mkIf enrolled secretsFile;
     };
 
     # Colmena host wrapper: extends mkHost with deployment.* options.

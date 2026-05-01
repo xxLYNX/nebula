@@ -21,6 +21,18 @@
 
 set -euo pipefail
 
+# ── auto-bootstrap ─────────────────────────────────────────────────────────────
+# If sops, ssh-to-age, or mkpasswd aren't in PATH (e.g. first run before the
+# universal module has been applied), re-exec the entire script inside a nix shell
+# that provides them. Fully transparent — the user doesn't need to do anything.
+if ! command -v ssh-to-age >/dev/null 2>&1 \
+|| ! command -v sops       >/dev/null 2>&1 \
+|| ! command -v mkpasswd   >/dev/null 2>&1; then
+  echo "[enroll] Required tools not in PATH — re-execing via nix shell (this downloads once)..."
+  exec nix shell nixpkgs#sops nixpkgs#ssh-to-age nixpkgs#mkpasswd \
+    --command bash "$0" "$@"
+fi
+
 # ── repo root detection ────────────────────────────────────────────────────────
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO="$(dirname "$SCRIPT_DIR")"

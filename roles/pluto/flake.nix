@@ -6,7 +6,7 @@
   };
 
   outputs = { self, nixpkgs, ... }: {
-    nixosModules.default = { config, pkgs, primaryUser, machine, ... }:
+    nixosModules.default = { config, pkgs, lib, primaryUser, machine, machineEnrolled, ... }:
     let
       diskDevice = if machine != null then (machine.hardware.disk.device or "/dev/sda") else "/dev/sda";
       swapSize   = if machine != null then (machine.hardware.disk.swap   or "8G")   else "8G";
@@ -44,19 +44,22 @@
         };
       };
 
-      # Decrypt the user's hashed password from the machine's sops secrets file.
-      # The secret must exist (run scripts/enroll-machine.sh) before the first apply
-      # that includes this role, or sops-nix activation will fail with a missing-key error.
-      # neededForUsers = true ensures decryption happens before the users module runs.
-      sops.secrets.user_password_hash = {
-        neededForUsers = true;
+      # Before enrollment: use bootstrap password so colmena can apply.
+      # After enrollment (enroll-machine.sh committed machine.yaml): switch to the
+      # sops-encrypted hash. machineEnrolled is set by mkHost in flake.nix based on
+      # whether secrets/machines/<hostname>/machine.yaml exists in the flake store.
+      sops.secrets = lib.optionalAttrs machineEnrolled {
+        user_password_hash = { neededForUsers = true; };
       };
 
       users.users.${primaryUser} = {
-        isNormalUser      = true;
-        extraGroups       = [ "wheel" "networkmanager" ];
+        isNormalUser = true;
+        extraGroups  = [ "wheel" "networkmanager" ];
+      } // (if machineEnrolled then {
         hashedPasswordFile = config.sops.secrets.user_password_hash.path;
-      };
+      } else {
+        password = "changeme";
+      });
 
       system.stateVersion = "26.05";
 

@@ -6,7 +6,7 @@
   };
 
   outputs = { self, nixpkgs, ... }: {
-    nixosModules.default = { config, pkgs, primaryUser, machine, ... }:
+    nixosModules.default = { config, pkgs, lib, primaryUser, machine, machineEnrolled, ... }:
     let
       diskDevice = if machine != null then (machine.hardware.disk.device or "/dev/sda") else "/dev/sda";
       swapSize   = if machine != null then (machine.hardware.disk.swap   or "8G")   else "8G";
@@ -45,18 +45,21 @@
         };
       };
 
-      # Decrypt the user's hashed password from the machine's sops secrets file.
-      # neededForUsers = true ensures decryption happens before the users module runs.
-      sops.secrets.user_password_hash = {
-        neededForUsers = true;
+      # Before enrollment: use bootstrap password so colmena can apply.
+      # After enrollment: switch to sops-encrypted hash. See roles/pluto/flake.nix for details.
+      sops.secrets = lib.optionalAttrs machineEnrolled {
+        user_password_hash = { neededForUsers = true; };
       };
 
       # Primary user
       users.users.${primaryUser} = {
-        isNormalUser       = true;
-        extraGroups        = [ "wheel" "networkmanager" ];
+        isNormalUser = true;
+        extraGroups  = [ "wheel" "networkmanager" ];
+      } // (if machineEnrolled then {
         hashedPasswordFile = config.sops.secrets.user_password_hash.path;
-      };
+      } else {
+        password = "changeme";
+      });
 
       # Pin to the NixOS release that was active when this host was first installed.
       # Changing this after the fact can break stateful NixOS options.
