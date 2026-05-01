@@ -4,11 +4,10 @@
 *.tfstate
 *.tfstate.backup
 
-# Secrets — encrypted .yaml files are safe to commit but we ignore by default
-# to prevent accidental plaintext commits. Track only templates and docs.
-secrets/
-!secrets/README.md
-!secrets/**/*.template
+# Secrets — ignore encrypted/plaintext .yaml files to prevent accidental commits.
+# The secrets/ directory itself is tracked so README and .template files are versioned.
+# Encrypted .yaml files (safe to commit) must be added explicitly: git add -f secrets/...
+secrets/**/*.yaml
 *.age
 
 # Nix

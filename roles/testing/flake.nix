@@ -8,8 +8,6 @@
   outputs = { self, nixpkgs, ... }: {
     nixosModules.default = { config, pkgs, primaryUser, machine, ... }:
     let
-      lib = pkgs.lib;
-
       diskDevice = if machine != null then (machine.hardware.disk.device or "/dev/sda") else "/dev/sda";
       swapSize   = if machine != null then (machine.hardware.disk.swap   or "8G")   else "8G";
       rootFormat = if machine != null then (machine.hardware.disk.format or "xfs")  else "xfs";
@@ -69,40 +67,8 @@
       # Without this systemd-boot boots the latest generation immediately (timeout = 0).
       boot.loader.timeout = 5;
 
-      # Allow unfree firmware (required by hardware.enableAllFirmware in desktop module)
-      nixpkgs.config.allowUnfree = true;
-
-      # Enable flakes and the new nix CLI globally so no --extra-experimental-features flag is needed.
-      # Additional settings mitigate the Nix interrupted-download store corruption bug (known since 2021):
-      # stalled-download-timeout aborts stalled transfers before partial data is committed;
-      # connect-timeout prevents hangs on unreachable substituters;
-      # download-attempts retries transient failures automatically.
-      nix.settings = {
-        experimental-features   = [ "nix-command" "flakes" ];
-        http-connections        = 50;
-        stalled-download-timeout = 90;
-        connect-timeout         = 5;
-        download-attempts       = 5;
-        # Colmena binary cache — set in system config so the daemon trusts it without
-        # needing trusted-users. Avoids recompiling colmena from source on future applies.
-        substituters            = [ "https://cache.nixos.org" "https://colmena.cachix.org" ];
-        trusted-public-keys     = [
-          "cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY="
-          "colmena.cachix.org-1:7BzpDnjjH8ki2CT3f6GdOk7QAzPOl+1t3LvTLXqYcSg="
-        ];
-      };
-
-      # Automatically collect old generations weekly; never keep more than 30 days worth.
-      # Combined with configurationLimit = 30 this keeps the store and /boot entries bounded.
-      nix.gc = {
-        automatic = true;
-        dates     = "weekly";
-        options   = "--delete-older-than 30d";
-      };
-
-      # Minimal packages for testing/dev machines.
-      # colmena is pinned via mkHost in the root flake (matches flake input version).
-      environment.systemPackages = with pkgs; [ git curl ];
+      # nixpkgs.config.allowUnfree, nix.settings, nix.gc, and the git/curl
+      # systemPackages are provided by the universal module (modules/universal/).
 
       # SSH daemon — needed for remote `colmena apply`. Not required for apply-local.
       # To enable passwordless remote deployment add your SSH public key via:

@@ -30,27 +30,23 @@
       url = "path:./roles/pluto";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    security-host = {
-      url = "path:./modules/security-host";
+    # Universal module — always imported by mkHost for every machine.
+    # Provides the Nix baseline (flakes, substituters, GC) and sops host-key wiring.
+    universal = {
+      url = "path:./modules/universal";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    # Feature modules (composable, added to host modules in inventory)
-    desktop = {
-      url = "path:./modules/desktop";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-    web-utils = {
-      url = "path:./modules/web-utils";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-    maintenance = {
-      url = "path:./modules/maintenance";
+    # Module registry — single input aggregating all composable modules.
+    # mkHost resolves os.modules entries via inputs.registry.nixosModules.${mod}.
+    # Adding a new module only requires editing modules/registry/flake.nix.
+    registry = {
+      url = "path:./modules/registry";
       inputs.nixpkgs.follows = "nixpkgs";
     };
   };
 
-  outputs = { self, nixpkgs, colmena, disko, sops-nix, home-manager, ... } @ inputs:
+  outputs = { self, nixpkgs, colmena, disko, sops-nix, home-manager, universal, registry, ... } @ inputs:
   let
     # inventory is the single source of truth for all machines in the fleet
     inventory = builtins.fromJSON (builtins.readFile ./inventory/machines.json);
@@ -67,13 +63,15 @@
         disko.nixosModules.disko
         sops-nix.nixosModules.sops
         home-manager.nixosModules.home-manager
+        # Universal baseline — Nix settings, substituters, GC, sops host-key — on every machine.
+        universal.nixosModules.default
         # Pin colmena binary to the same version as the flake input so that
         # `colmena apply-local` on the host always matches the colmenaHive schema.
         ({ pkgs, ... }: {
           environment.systemPackages = [ colmena.packages.${pkgs.system}.colmena ];
         })
       ] ++ [ inputs.${machine.os.role}.nixosModules.default ]
-        ++ (map (mod: inputs.${mod}.nixosModules.default) machine.os.modules);
+        ++ (map (mod: registry.nixosModules.${mod}) machine.os.modules);
 
       # Set the host platform via the modern NixOS option rather than the deprecated
       # `system` argument to nixosSystem/Colmena meta. This suppresses the
