@@ -159,7 +159,53 @@ Run 'sudo colmena apply-local --sudo' on ${HOSTNAME} to activate."
 info "Pushing to origin..."
 git push
 
+# ── 6. apply the new config so sops-nix activates the secret ──────────────────
 echo ""
-info "Enrollment complete."
-info "Next: run 'sudo colmena apply-local --sudo' on $HOSTNAME to activate the new secrets."
-info "Then update the role to use 'hashedPasswordFile' instead of 'password = ...'"
+info "Applying new configuration via colmena (this rebuilds NixOS with the SOPS secret)..."
+sudo colmena apply-local --sudo
+
+# ── 7. verify SOPS actually worked ────────────────────────────────────────────
+echo ""
+info "Verifying SOPS decryption..."
+
+SECRET_RUNTIME="/run/secrets/user_password_hash"
+
+# sops-nix writes decrypted secrets to /run/secrets/ at activation.
+# If the file is missing, activation failed silently (shouldn't happen with
+# neededForUsers = true, but check anyway).
+[[ -f "$SECRET_RUNTIME" ]] \
+  || die "Verification failed: $SECRET_RUNTIME does not exist.
+sops-nix did not decrypt the secret. Check: journalctl -b | grep sops"
+
+RUNTIME_HASH="$(cat "$SECRET_RUNTIME")"
+
+# The runtime hash and the hash we created must match exactly.
+[[ "$RUNTIME_HASH" == "$HASHED" ]] \
+  || die "Verification failed: runtime hash does not match what was encrypted.
+Expected: $HASHED
+Got:      $RUNTIME_HASH
+The secret file may have been corrupted or the wrong key was used."
+
+# Cross-check: verifies the hash actually authenticates the password the user
+# typed by running it through the same kdf and comparing. Uses python3 crypt
+# which is available on NixOS without extra packages.
+if python3 -c "
+import crypt, sys
+ok = crypt.crypt('${PW}', '${RUNTIME_HASH}') == '${RUNTIME_HASH}'
+sys.exit(0 if ok else 1)
+" 2>/dev/null; then
+  echo ""
+  printf '\e[32m[enroll]\e[0m ✓ Hello SOPS! Password authenticated successfully for %s@%s\n' \
+    "$(id -un)" "$HOSTNAME"
+  printf '\e[32m[enroll]\e[0m ✓ Secret decrypted to %s\n' "$SECRET_RUNTIME"
+  printf '\e[32m[enroll]\e[0m ✓ Hash round-trip verified — login will work\n'
+else
+  die "Verification failed: the decrypted hash does not authenticate the password you entered.
+The hash was written and decrypted correctly, but something went wrong with hashing.
+Check: python3 -c \"import crypt; print(crypt.crypt('<password>', open('/run/secrets/user_password_hash').read().strip()))\"
+Then compare to: $(cat "$SECRET_RUNTIME")"
+fi
+
+echo ""
+info "Enrollment complete. $HOSTNAME is fully enrolled in the SOPS key pool."
+info "You can now open a new TTY (Ctrl+Alt+F2) and log in with your chosen password."
