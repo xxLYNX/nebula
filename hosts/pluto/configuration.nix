@@ -10,6 +10,7 @@
     tree
     bitwarden-desktop
     pkgs.qbittorrent
+    syncthing
   ];
 
 }
