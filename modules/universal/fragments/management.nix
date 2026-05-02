@@ -8,6 +8,7 @@
   # Only declare the secret after enrollment (same pattern we used for the password)
   sops.secrets = lib.optionalAttrs machineEnrolled {
     fleet_ssh_private_key = {
+      sopsFile = ../../../secrets/management/fleet-ssh-key.yaml;
       # Example: make it readable by root only and put it in /etc/ssh/
       path = "/etc/ssh/fleet_ed25519_key";
       owner = "root";
