@@ -9,6 +9,7 @@
     yazi
     tree
     bitwarden-desktop
+    qbittorrent
   ];
 
 }
