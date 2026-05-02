@@ -1,4 +1,4 @@
-{ pkgs, ... }:
+{ client, pkgs, ... }:
 {
   imports = [
     ./hardware-configuration.nix
@@ -9,7 +9,7 @@
     yazi
     tree
     bitwarden-desktop
-    qbittorrent
+    pkgs.qbittorrent
   ];
 
 }
