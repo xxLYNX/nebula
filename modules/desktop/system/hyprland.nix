@@ -38,12 +38,10 @@ lib.mkIf (cfg.enable or false) {
 
   services.udisks2.enable = true;
   services.gvfs.enable = true;
-  services.udiskie = {
-    enable = true;
-    autostart = true;
-    notify = true;
-    tray = "always"; # or "auto" or "never"
-  };
+  security.polkit.enable = true;
+  environment.systemPackages = with pkgs; [
+    udiskie
+  ];
 
   security.sudo.wheelNeedsPassword = lib.mkDefault true;
 
