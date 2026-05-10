@@ -11,6 +11,7 @@
     bitwarden-desktop
     pkgs.qbittorrent
     obsidian
+    zed-editor
   ];
 
   services.syncthing = {
