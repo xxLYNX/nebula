@@ -13,7 +13,6 @@
     obsidian
     zed-editor
     mage
-    gnumake
   ];
 
   services.syncthing = {
