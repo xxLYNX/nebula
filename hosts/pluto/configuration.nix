@@ -13,6 +13,8 @@
     obsidian
     zed-editor
     mage
+    cargo
+    rustc
   ];
 
   services.syncthing = {
