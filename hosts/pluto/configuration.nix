@@ -16,6 +16,7 @@
     cargo
     rustc
     gcc
+    gnumake
   ];
 
   services.syncthing = {
