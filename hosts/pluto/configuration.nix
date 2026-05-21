@@ -15,6 +15,7 @@
     mage
     cargo
     rustc
+    gcc
   ];
 
   services.syncthing = {
