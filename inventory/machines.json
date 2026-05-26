@@ -5,24 +5,16 @@
       "hostname": "testbed",
       "description": "Testing and development laptop",
       "address": "192.168.50.200",
-      "tags": [
-        "testing"
-      ],
+      "tags": ["testing"],
       "users": {
-        "admin": [
-          "voyager"
-        ],
+        "admin": ["voyager"],
         "regular": []
       },
       "os": {
         "type": "nixos",
         "system": "x86_64-linux",
         "role": "testing",
-        "modules": [
-          "desktop",
-          "web-utils",
-          "maintenance"
-        ]
+        "modules": ["desktop", "web-utils", "maintenance", "gaming"]
       },
       "hardware": {
         "form": "laptop",
@@ -38,25 +30,16 @@
       "description": "Primary workstation",
       "enrolled": true,
       "address": "192.168.50.201",
-      "tags": [
-        "workstation",
-        "physical"
-      ],
+      "tags": ["workstation", "physical"],
       "users": {
-        "admin": [
-          "voyager"
-        ],
+        "admin": ["voyager"],
         "regular": []
       },
       "os": {
         "type": "nixos",
         "system": "x86_64-linux",
         "role": "pluto",
-        "modules": [
-          "desktop",
-          "web-utils",
-          "maintenance"
-        ]
+        "modules": ["desktop", "web-utils", "maintenance", "gaming"]
       },
       "hardware": {
         "form": "desktop",

@@ -20,9 +20,13 @@
       url = "path:../security-host";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    gaming = {
+      url = "path:../gaming";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
-  outputs = { self, nixpkgs, desktop, web-utils, maintenance, security-host, ... }: {
+  outputs = { self, nixpkgs, desktop, web-utils, maintenance, security-host, gaming, ... }: {
     # Each composable module is re-exported by name.
     # mkHost resolves: inputs.registry.nixosModules.${mod}
     nixosModules = {
@@ -30,6 +34,7 @@
       web-utils     = web-utils.nixosModules.default;
       maintenance   = maintenance.nixosModules.default;
       security-host = security-host.nixosModules.default;
+      gaming        = gaming.nixosModules.default;
     };
   };
 }

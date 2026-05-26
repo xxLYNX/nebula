@@ -43,4 +43,10 @@
     guiAddress = "127.0.0.1:8384";
   };
 
+  # Gaming support: Steam + Intel Iris Xe graphics + Proton + 32-bit multilib
+  services.gaming = {
+    enable = true;
+    enable32bit = true;
+  };
+
 }
