@@ -2,7 +2,7 @@
   description = "Module registry — aggregates all composable nebula modules as named nixosModules outputs. The root flake takes a single 'registry' input instead of one input per module. Adding a new module to the fleet only requires editing this file, not the root flake.";
 
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+    nixpkgs.follows = "nixpkgs";
 
     desktop = {
       url = "path:../desktop";

@@ -1,7 +1,7 @@
 {
   description = "Maintenance module: Nix store verification/repair, daemon DB backup, narinfo TTL hardening";
 
-  inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+  inputs.nixpkgs.follows = "nixpkgs";
 
   outputs = { self, nixpkgs, ... }: {
 

@@ -2,7 +2,7 @@
   description = "Web utilities module: zen-browser and browser-related tooling";
 
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+    nixpkgs.follows = "nixpkgs";
 
     # Zen browser community flake — provides up-to-date zen-browser binaries.
     # The package is built from GitHub releases, not from source, so the exact

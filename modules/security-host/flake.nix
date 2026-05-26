@@ -2,7 +2,7 @@
   description = "Composable security-host module: AppArmor, lightweight service wiring for Headscale/Wazuh, and safe defaults.";
 
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+    nixpkgs.follows = "nixpkgs";
   };
 
   outputs = { self, nixpkgs, ... } @ inputs:
