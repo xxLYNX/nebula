@@ -1,5 +1,5 @@
 # Gaming Steam configuration for NixOS.
-# Provides: Steam client, Proton support (via Steam), input device access.
+# Provides: Steam client with Proton and automatic controller/input device support.
 # Imported by modules/gaming/flake.nix nixosModules.default.
 
 { config, pkgs, lib, ... }:
@@ -8,6 +8,7 @@ let
 in
 lib.mkIf cfg.enable {
   # Steam client automatically includes Proton for game compatibility
+  # Controller/input device udev rules are included automatically
   programs.steam = {
     enable = true;
     remotePlay.openFirewall = false;
@@ -18,10 +19,5 @@ lib.mkIf cfg.enable {
   # Additional gaming utilities
   environment.systemPackages = with pkgs; [
     protontricks  # Tools to manage Proton installations and game configurations
-  ];
-
-  # Input device access for controllers and peripherals
-  services.udev.packages = with pkgs; [
-    steam-devices
   ];
 }
