@@ -38,6 +38,12 @@ lib.mkIf cfg.enable {
         # Renice game process for better scheduling priority
         renice = 10;
       };
+      cpu = {
+        # Switch CPU governor to performance mode when game starts
+        # Reverts to base governor (schedutil) when game stops
+        gov_on_start = "performance";
+        gov_on_stop = cfg.cpuGovernor;
+      };
       gpu = {
         # Apply GPU performance mode (works with Mesa drivers)
         apply_gpu_optimisations = "accept-responsibility";
