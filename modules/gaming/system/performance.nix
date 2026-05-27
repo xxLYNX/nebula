@@ -2,10 +2,16 @@
 # Provides: CPU frequency scaling, gamemode, microcode updates, kernel tuning.
 # Imported by modules/gaming/flake.nix nixosModules.default.
 
-{ config, pkgs, lib, primaryUser ? null, ... }:
+{
+  config,
+  pkgs,
+  lib,
+  primaryUser ? null,
+  ...
+}:
 
 let
-  cfg = config.services.gaming or {};
+  cfg = config.services.gaming or { };
 in
 lib.mkIf cfg.enable {
   # CPU frequency governor: base governor for system-wide use.
@@ -24,10 +30,8 @@ lib.mkIf cfg.enable {
 
   # CPU microcode updates for Intel/AMD.
   # Improves performance, stability, and security.
-  hardware.cpu.intel.updateMicrocode =
-    lib.mkDefault config.hardware.enableRedistributableFirmware;
-  hardware.cpu.amd.updateMicrocode =
-    lib.mkDefault config.hardware.enableRedistributableFirmware;
+  hardware.cpu.intel.updateMicrocode = lib.mkDefault config.hardware.enableRedistributableFirmware;
+  hardware.cpu.amd.updateMicrocode = lib.mkDefault config.hardware.enableRedistributableFirmware;
 
   # GameMode: automatically boosts performance when games launch,
   # then reverts when they close.
@@ -52,6 +56,13 @@ lib.mkIf cfg.enable {
         # These belong in [general], not [cpu].
         desiredgov = "performance";
         defaultgov = cfg.cpuGovernor;
+
+        # Intel P-State Energy Performance Preference (EPP).
+        # Sets CPU energy/performance bias for turbo boost behavior.
+        # "performance" = allow max turbo frequencies (required for 4.7GHz on i7-1165G7)
+        # Without this, EPP defaults to "balance_performance" which limits turbo.
+        desiredepp = "performance";
+        defaultepp = "balance_performance";
 
         # Use firmware/platform performance profile where available.
         desiredprof = "performance";
