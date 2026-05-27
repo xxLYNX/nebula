@@ -94,41 +94,42 @@
 
           # MangoHud configuration for performance monitoring
           config = lib.mkIf cfg.enableMangoHud {
-            programs.mangohud = {
-              enable = true;
-              settings = {
-                # FPS and frame timing
-                fps = true;
-                frametime = true;
-                frame_timing = true;
+            # Install MangoHud package
+            environment.systemPackages = with pkgs; [ mangohud ];
 
-                # CPU monitoring
-                cpu_stats = true;
-                cpu_temp = true;
-                cpu_power = true;
-                cpu_mhz = true;
-                core_load = true;
+            # Create default MangoHud configuration
+            environment.etc."mangohud.conf".text = ''
+              # FPS and frame timing
+              fps
+              frametime
+              frame_timing=1
 
-                # GPU monitoring
-                gpu_stats = true;
-                gpu_temp = true;
-                gpu_power = true;
-                gpu_core_clock = true;
-                gpu_mem_clock = true;
-                vram = true;
+              # CPU monitoring
+              cpu_stats
+              cpu_temp
+              cpu_power
+              cpu_mhz
+              core_load
 
-                # System monitoring
-                ram = true;
-                wine = true;
-                gamemode = true;
+              # GPU monitoring
+              gpu_stats
+              gpu_temp
+              gpu_power
+              gpu_core_clock
+              gpu_mem_clock
+              vram
 
-                # Throttling detection
-                throttling_status = true;
+              # System monitoring
+              ram
+              wine
+              gamemode
 
-                # Display position (top-left by default)
-                position = "top-left";
-              };
-            };
+              # Throttling detection
+              throttling_status
+
+              # Display position
+              position=top-left
+            '';
           };
 
         };
