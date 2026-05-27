@@ -92,46 +92,6 @@
             };
           };
 
-          # MangoHud configuration for performance monitoring
-          config = lib.mkIf cfg.enableMangoHud {
-            # Install MangoHud package
-            environment.systemPackages = with pkgs; [ mangohud ];
-
-            # Create default MangoHud configuration
-            environment.etc."mangohud.conf".text = ''
-              # FPS and frame timing
-              fps
-              frametime
-              frame_timing=1
-
-              # CPU monitoring
-              cpu_stats
-              cpu_temp
-              cpu_power
-              cpu_mhz
-              core_load
-
-              # GPU monitoring
-              gpu_stats
-              gpu_temp
-              gpu_power
-              gpu_core_clock
-              gpu_mem_clock
-              vram
-
-              # System monitoring
-              ram
-              wine
-              gamemode
-
-              # Throttling detection
-              throttling_status
-
-              # Display position
-              position=top-left
-            '';
-          };
-
         };
     };
 }
