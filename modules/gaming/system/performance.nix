@@ -40,6 +40,11 @@ lib.mkIf cfg.enable {
   hardware.cpu.intel.updateMicrocode = lib.mkDefault config.hardware.enableRedistributableFirmware;
   hardware.cpu.amd.updateMicrocode = lib.mkDefault config.hardware.enableRedistributableFirmware;
 
+  # Power Profiles Daemon: required for proper GPU power management on Intel iGPUs.
+  # Without this, GPU may not reach full performance clocks during gaming.
+  # Works alongside GameMode to optimize power delivery to CPU and GPU.
+  services.power-profiles-daemon.enable = true;
+
   # GameMode: automatically boosts performance when games launch,
   # then reverts when they close.
   #
