@@ -53,29 +53,21 @@ lib.mkIf cfg.enable {
     enableRenice = true;
 
     settings = {
+
       general = {
-        # GameMode negates this value internally.
-        # renice = 10 means the game process gets nice -10.
-        # User must be in the "gamemode" group.
         renice = 10;
 
-        # Correct GameMode keys for governor switching.
-        # These belong in [general], not [cpu].
-        # In intel_pstate active mode, "powersave" = smart scaling (HWP-managed)
         desiredgov = "performance";
         defaultgov = cfg.cpuGovernor;
 
-        # Use firmware/platform performance profile where available.
         desiredprof = "performance";
 
-        # Prevent GameMode from switching to its iGPU-specific governor path.
-        # This matters on Intel/iGPU systems, where the example upstream config
-        # otherwise uses igpu_desiredgov=powersave under certain load ratios.
-        #
-        # -1 disables iGPU checking and always uses desiredgov for games.
-        igpu_power_threshold = -1;
+        # Integrated-GPU-aware behavior:
+        # if iGPU load is high relative to CPU load, GameMode may use powersave
+        # for the CPU governor to avoid starving the iGPU package budget.
+        igpu_desiredgov = "powersave";
+        igpu_power_threshold = 0.3;
 
-        # Keep screensaver inhibition enabled while gaming.
         inhibit_screensaver = 1;
       };
 
