@@ -43,10 +43,18 @@
     guiAddress = "127.0.0.1:8384";
   };
 
+  # Intel P-State: Switch to passive mode to enable schedutil governor
+  # Active mode (default) only provides performance/powersave governors
+  # Passive mode enables schedutil for smart scaling + GameMode auto-boost
+  boot.kernelParams = [ "intel_pstate=passive" ];
+
   # Gaming support: Steam + Intel Iris Xe graphics + Proton + 32-bit multilib
+  # cpuGovernor defaults to "schedutil" for laptop battery savings
+  # GameMode will automatically boost to "performance" when games launch
   services.gaming = {
     enable = true;
     enable32bit = true;
+    # cpuGovernor = "schedutil";  # Default, provides battery savings + auto-boost via GameMode
   };
 
 }
