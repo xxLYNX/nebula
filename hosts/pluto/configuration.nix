@@ -5,7 +5,6 @@
   ];
 
   environment.systemPackages = with pkgs; [
-    asusctl
     fzf
     yazi
     tree
@@ -19,6 +18,13 @@
     gcc
     gnumake
   ];
+
+  services.power-profiles-daemon.enable = true;
+
+  services.asusd = {
+    enable = true;
+    enableUserService = true;
+  };
 
   programs.direnv = {
     enable = true;
