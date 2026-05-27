@@ -57,17 +57,13 @@ lib.mkIf cfg.enable {
     };
   };
 
-  # Polkit rule: Allow GameMode to change CPU governor and other system settings
-  # GameMode uses pkexec to run cpugovctl (governor) and procsysctl (split_lock_mitigate)
+  # Polkit rule: Allow GameMode to use pkexec without password
+  # Temporary: Allow all pkexec for users group to debug why specific matching isn't working
   security.polkit.extraConfig = lib.mkIf cfg.enableGameMode ''
     polkit.addRule(function(action, subject) {
       if (action.id == "org.freedesktop.policykit.exec" &&
           subject.isInGroup("users")) {
-        var program = action.lookup("program");
-        // Allow GameMode helper binaries: cpugovctl and procsysctl
-        if (program.indexOf("cpugovctl") > -1 || program.indexOf("procsysctl") > -1) {
-          return polkit.Result.YES;
-        }
+        return polkit.Result.YES;
       }
     });
   '';
