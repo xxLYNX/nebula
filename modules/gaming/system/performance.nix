@@ -57,6 +57,18 @@ lib.mkIf cfg.enable {
     };
   };
 
+  # Polkit rule: Allow GameMode to change CPU governor without password prompt
+  # GameMode uses pkexec to run cpugovctl, which requires authorization
+  security.polkit.extraConfig = lib.mkIf cfg.enableGameMode ''
+    polkit.addRule(function(action, subject) {
+      if (action.id == "org.freedesktop.policykit.exec" &&
+          action.lookup("program").indexOf("cpugovctl") > -1 &&
+          subject.isInGroup("users")) {
+        return polkit.Result.YES;
+      }
+    });
+  '';
+
   # Performance kernel parameters for gaming.
   # These improve latency and responsiveness during gameplay.
   boot.kernelParams = lib.optionals cfg.enablePerformanceKernelParams [
