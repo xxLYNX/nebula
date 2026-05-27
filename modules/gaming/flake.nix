@@ -82,6 +82,53 @@
                 May slightly reduce security for better gaming performance.
               '';
             };
+            enableMangoHud = lib.mkOption {
+              type = lib.types.bool;
+              default = true;
+              description = ''
+                Enable MangoHud performance overlay for monitoring FPS, CPU/GPU stats, and GameMode status.
+                Add "mangohud %command%" to Steam launch options to use.
+              '';
+            };
+          };
+
+          # MangoHud configuration for performance monitoring
+          config = lib.mkIf cfg.enableMangoHud {
+            programs.mangohud = {
+              enable = true;
+              settings = {
+                # FPS and frame timing
+                fps = true;
+                frametime = true;
+                frame_timing = true;
+
+                # CPU monitoring
+                cpu_stats = true;
+                cpu_temp = true;
+                cpu_power = true;
+                cpu_mhz = true;
+                core_load = true;
+
+                # GPU monitoring
+                gpu_stats = true;
+                gpu_temp = true;
+                gpu_power = true;
+                gpu_core_clock = true;
+                gpu_mem_clock = true;
+                vram = true;
+
+                # System monitoring
+                ram = true;
+                wine = true;
+                gamemode = true;
+
+                # Throttling detection
+                throttling_status = true;
+
+                # Display position (top-left by default)
+                position = "top-left";
+              };
+            };
           };
 
         };
