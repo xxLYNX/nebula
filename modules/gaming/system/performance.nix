@@ -16,16 +16,23 @@ in
 lib.mkIf cfg.enable {
   # CPU frequency governor: base governor for system-wide use.
   #
-  # Recommended setup for automatic gaming performance + battery savings:
-  # - Set cpuGovernor = "schedutil" normally.
-  # - Enable GameMode.
-  # - Add "gamemoderun %command%" to Steam launch options.
-  # - Result: smart scaling normally, performance governor while gaming.
+  # Intel P-State active mode (default on modern Intel CPUs):
+  # In active mode with HWP (Hardware P-States), only "performance" and "powersave"
+  # governors are available. The "powersave" governor in active mode is hardware-managed
+  # and provides intelligent scaling similar to "schedutil" in passive mode.
   #
-  # Governor options:
-  # "schedutil"   = intelligent scaling, good normal-use default.
-  # "performance" = always max-performance governor.
-  # "powersave"   = low-frequency bias; not recommended as the only gaming mode.
+  # Recommended setup for automatic gaming performance + battery savings:
+  # - Set cpuGovernor = "powersave" (smart scaling via HWP in active mode)
+  # - Enable GameMode
+  # - Add "gamemoderun %command%" to Steam launch options
+  # - Result: smart scaling normally, performance governor while gaming
+  #
+  # Governor options in intel_pstate active mode:
+  # "powersave"   = hardware-managed intelligent scaling (recommended for laptops)
+  # "performance" = always max turbo frequency (for desktops)
+  #
+  # Note: When governor switches to "performance" in active mode, EPP automatically
+  # becomes "performance" and allows full turbo boost (e.g., 4.7GHz on i7-1165G7).
   powerManagement.cpuFreqGovernor = lib.mkDefault cfg.cpuGovernor;
 
   # CPU microcode updates for Intel/AMD.
@@ -54,15 +61,9 @@ lib.mkIf cfg.enable {
 
         # Correct GameMode keys for governor switching.
         # These belong in [general], not [cpu].
+        # In intel_pstate active mode, "powersave" = smart scaling (HWP-managed)
         desiredgov = "performance";
         defaultgov = cfg.cpuGovernor;
-
-        # Intel P-State Energy Performance Preference (EPP).
-        # Sets CPU energy/performance bias for turbo boost behavior.
-        # "performance" = allow max turbo frequencies (required for 4.7GHz on i7-1165G7)
-        # Without this, EPP defaults to "balance_performance" which limits turbo.
-        desiredepp = "performance";
-        defaultepp = "balance_performance";
 
         # Use firmware/platform performance profile where available.
         desiredprof = "performance";

@@ -46,18 +46,14 @@
   # Use latest stable kernel for security updates and performance improvements
   boot.kernelPackages = pkgs.linuxPackages_latest;
 
-  # Intel P-State: Switch to passive mode to enable schedutil governor
-  # Active mode (default) only provides performance/powersave governors
-  # Passive mode enables schedutil for smart scaling + GameMode auto-boost
-  boot.kernelParams = [ "intel_pstate=passive" ];
-
   # Gaming support: Steam + Intel Iris Xe graphics + Proton + 32-bit multilib
-  # cpuGovernor defaults to "schedutil" for laptop battery savings
+  # Intel P-State active mode (default): uses HWP for efficient power management
+  # In active mode, "powersave" governor ≈ schedutil (smart scaling)
   # GameMode will automatically boost to "performance" when games launch
   services.gaming = {
     enable = true;
     enable32bit = true;
-    # cpuGovernor = "schedutil";  # Default, provides battery savings + auto-boost via GameMode
+    cpuGovernor = "powersave"; # In intel_pstate active mode, powersave = smart scaling
   };
 
 }
