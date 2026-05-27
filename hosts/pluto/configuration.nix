@@ -5,6 +5,7 @@
   ];
 
   environment.systemPackages = with pkgs; [
+    asusctl
     fzf
     yazi
     tree
@@ -23,7 +24,6 @@
 
   services.asusd = {
     enable = true;
-    enableUserService = true;
   };
 
   programs.direnv = {
