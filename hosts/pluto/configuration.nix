@@ -43,6 +43,9 @@
     guiAddress = "127.0.0.1:8384";
   };
 
+  # Use latest stable kernel for security updates and performance improvements
+  boot.kernelPackages = pkgs.linuxPackages_latest;
+
   # Intel P-State: Switch to passive mode to enable schedutil governor
   # Active mode (default) only provides performance/powersave governors
   # Passive mode enables schedutil for smart scaling + GameMode auto-boost
