@@ -1,4 +1,11 @@
 { config, pkgs, ... }:
+
+let
+  cursorAgentCompat = pkgs.writeShellScriptBin "agent" ''
+    exec ${pkgs.cursor-cli}/bin/cursor-agent "$@"
+  '';
+in
+
 {
 
   programs.nixvim = {
@@ -36,11 +43,15 @@
       clipboard = "unnamedplus";
     };
 
-    extraPackages = with pkgs; [
-      curl
-      ripgrep
-      file
-    ];
+    extraPackages =
+      (with pkgs; [
+        curl
+        ripgrep
+        file
+      ])
+      ++ [
+        cursorAgentCompat
+      ]; # Ugly af
 
     # ── Syntax highlighting ────────────────────────────────────────────────
     plugins.treesitter = {
@@ -150,22 +161,19 @@
     };
 
     # ── AI code completion ────────────────────────────────────────────────
-    # Disabled — vimplugin-copilot-vim unfree license not respected during
-    # nixos-install. Re-enable once packaging issue is resolved.
-    # plugins.copilot-vim = {
-    #   enable = true;
-    #   settings = {
-    #     no_tab_map = true;
-    #     filetypes  = { "*" = true; };
-    #   };
-    # };
-    # plugins.codecompanion = {
-    #   enable = true;
-    #   settings.interactions = {
-    #     chat   = { adapter = "copilot"; };
-    #     inline = { adapter = "copilot"; };
-    #   };
-    # };
+    plugins.codecompanion = {
+      enable = true;
+      settings = {
+        interactions = {
+          chat = {
+            adapter = "cursor_cli";
+          };
+
+          # Do not set inline = { adapter = "cursor_cli";};
+          # Cursor CLI is an ACP adapter, and ACP is chat-only in CodeCompanion
+        };
+      };
+    };
 
     # ── Keymaps ───────────────────────────────────────────────────────────
     keymaps = [
@@ -175,54 +183,52 @@
         action = "<cmd>CodeCompanionChat<CR>";
         options.desc = "CodeCompanion chat";
       }
-      {
-        mode = [
-          "n"
-          "v"
-        ];
-        key = "<leader>aa";
-        action = "<cmd>CodeCompanion<CR>";
-        options.desc = "CodeCompanion inline";
-      }
+      #{
+      #  mode = [
+      #    "n"
+      #    "v"
+      #  ];
+      #  key = "<leader>aa";
+      #  action = "<cmd>CodeCompanion<CR>";
+      #  options.desc = "CodeCompanion inline";
+      #}
+
       {
         mode = "n";
         key = "<leader>ap";
         action = "<cmd>CodeCompanionActions<CR>";
         options.desc = "CodeCompanion actions";
       }
-      {
-        mode = "i";
-        key = "<C-l>";
-        action = ''copilot#Accept("\<CR>")'';
-        options = {
-          expr = true;
-          silent = true;
-          replace_keycodes = false;
-          desc = "Accept Copilot suggestion";
-        };
-      }
     ];
   };
 
   # Dev toolchain packages
-  home.packages = with pkgs; [
-    # Go — gopls is managed by nixvim's LSP plugin; omitted here to avoid
-    # a buildEnv conflict on the `modernize` binary (gopls 0.21+ and gotools both ship it).
-    go
-    golangci-lint
-    gotools
-    gofumpt
-    # JavaScript / TypeScript
-    typescript-language-server
-    typescript
-    eslint
-    prettier
-    # Bash
-    bash-language-server
-    shellcheck
-    shfmt
-    # Nix
-    nixd
-    pkgs.nixfmt
-  ];
+  home.packages =
+    (with pkgs; [
+      # Go — gopls is managed by nixvim's LSP plugin; omitted here to avoid
+      # a buildEnv conflict on the `modernize` binary (gopls 0.21+ and gotools both ship it).
+      go
+      golangci-lint
+      gotools
+      gofumpt
+      # JavaScript / TypeScript
+      typescript-language-server
+      typescript
+      eslint
+      prettier
+      # Bash
+      bash-language-server
+      shellcheck
+      shfmt
+      # Nix
+      nixd
+      pkgs.nixfmt
+
+      #Cursor CLI from nixpkgs; provides 'cursor-agent'
+      cursor-cli
+    ])
+    ++ [
+      # Compatibility command for CodeCompanion, which expects `agent`
+      cursorAgentCompat
+    ];
 }
