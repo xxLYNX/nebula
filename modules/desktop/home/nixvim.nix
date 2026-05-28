@@ -1,4 +1,4 @@
-{ pkgs, ... }:
+{ config, pkgs, ... }:
 {
 
   programs.nixvim = {
@@ -42,7 +42,7 @@
     plugins.treesitter = {
       enable = true;
       highlight.enable = true;
-      grammarPackages = with pkgs.vimPlugins.nvim-treesitter.builtGrammars; [
+      grammarPackages = with config.programs.nixvim.plugins.treesitter.package.builtGrammars; [
         go gomod gosum gowork
         yaml
         javascript typescript tsx
@@ -50,7 +50,7 @@
         nix
       ];
     };
-    plugins.treesitter-context.enable = true;
+    plugins.treesitter-context.enable = true
 
     # ── LSP ───────────────────────────────────────────────────────────────
     plugins.lsp = {
