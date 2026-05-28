@@ -46,130 +46,156 @@
     };
   };
 
-  outputs = { self, nixpkgs, colmena, disko, sops-nix, home-manager, universal, registry, ... } @ inputs:
-  let
-    lib = nixpkgs.lib;
-    # inventory is the single source of truth for all machines in the fleet
-    inventory = builtins.fromJSON (builtins.readFile ./inventory/machines.json);
-
-    # mkHost builds a NixOS module fragment for each instance defined in the inventory.
-    # It:
-    #  - imports host-specific configuration.nix (keyed by machine.hostname, not instance ID)
-    #  - adds common modules (disko, sops, home-manager)
-    #  - imports the role flake (os.role) then any additional feature modules (os.modules)
-    #  - passes the whole machine object as _module.args.machine so role flakes can be generic
-    mkHost = name: machine:
+  outputs =
+    {
+      self,
+      nixpkgs,
+      colmena,
+      disko,
+      sops-nix,
+      home-manager,
+      universal,
+      registry,
+      ...
+    }@inputs:
     let
-      # Path to this machine's encrypted secrets file in the repo.
-      secretsFile = ./secrets/machines + "/${machine.hostname}/machine.yaml";
-      # Enrollment marker: a plain file with no extension so it is NOT matched by
-      # the 'secrets/**/*.yaml' gitignore rule. Nix's flake source filter strips
-      # gitignored files from the store copy, so builtins.pathExists on machine.yaml
-      # always returns false even when force-committed. The marker file is committed
-      # normally (no -f needed) and is always visible to the evaluator.
-      enrolledMarker = ./secrets/machines + "/${machine.hostname}/enrolled";
-      enrolled       = builtins.pathExists enrolledMarker;
-    in {
-      imports = [
-        ./hosts/${machine.hostname}/configuration.nix
-        disko.nixosModules.disko
-        sops-nix.nixosModules.sops
-        home-manager.nixosModules.home-manager
-        # Universal baseline — Nix settings, substituters, GC, sops host-key — on every machine.
-        universal.nixosModules.default
-        # Pin colmena binary to the same version as the flake input so that
-        # `colmena apply-local` on the host always matches the colmenaHive schema.
-        ({ pkgs, ... }: {
-          environment.systemPackages = [ colmena.packages.${pkgs.system}.colmena ];
-        })
-      ] ++ [ inputs.${machine.os.role}.nixosModules.default ]
-        ++ (map (mod: registry.nixosModules.${mod}) machine.os.modules);
+      lib = nixpkgs.lib;
+      # inventory is the single source of truth for all machines in the fleet
+      inventory = builtins.fromJSON (builtins.readFile ./inventory/machines.json);
 
-      # Set the host platform via the modern NixOS option rather than the deprecated
-      # `system` argument to nixosSystem/Colmena meta. This suppresses the
-      # "'system' has been renamed to nixpkgs.hostPlatform" evaluation warning.
-      nixpkgs.hostPlatform = systemFor machine;
+      # mkHost builds a NixOS module fragment for each instance defined in the inventory.
+      # It:
+      #  - imports host-specific configuration.nix (keyed by machine.hostname, not instance ID)
+      #  - adds common modules (disko, sops, home-manager)
+      #  - imports the role flake (os.role) then any additional feature modules (os.modules)
+      #  - passes the whole machine object as _module.args.machine so role flakes can be generic
+      mkHost =
+        name: machine:
+        let
+          # Path to this machine's encrypted secrets file in the repo.
+          secretsFile = ./secrets/machines + "/${machine.hostname}/machine.yaml";
+          # Enrollment marker: a plain file with no extension so it is NOT matched by
+          # the 'secrets/**/*.yaml' gitignore rule. Nix's flake source filter strips
+          # gitignored files from the store copy, so builtins.pathExists on machine.yaml
+          # always returns false even when force-committed. The marker file is committed
+          # normally (no -f needed) and is always visible to the evaluator.
+          enrolledMarker = ./secrets/machines + "/${machine.hostname}/enrolled";
+          enrolled = builtins.pathExists enrolledMarker;
+        in
+        {
+          imports = [
+            ./hosts/${machine.hostname}/configuration.nix
+            disko.nixosModules.disko
+            sops-nix.nixosModules.sops
+            home-manager.nixosModules.home-manager
+            # Universal baseline — Nix settings, substituters, GC, sops host-key — on every machine.
+            universal.nixosModules.default
+            # Pin colmena binary to the same version as the flake input so that
+            # `colmena apply-local` on the host always matches the colmenaHive schema.
+            (
+              { pkgs, ... }:
+              {
+                environment.systemPackages = [ colmena.packages.${pkgs.system}.colmena ];
+              }
+            )
+          ]
+          ++ [ inputs.${machine.os.role}.nixosModules.default ]
+          ++ (map (mod: registry.nixosModules.${mod}) machine.os.modules);
 
-      # Pass arguments to modules produced by flakes in `modules`.
-      _module.args = {
-        inherit inputs;
-        primaryUser     = builtins.head machine.users.admin;
-        machine         = machine; # whole instance object — role flakes read hardware.disk.*, os.*, users.*, etc.
-        # True once scripts/enroll-machine.sh has run and committed the encrypted
-        # secrets file for this machine. Roles use this to switch from the bootstrap
-        # plaintext password to sops hashedPasswordFile without breaking pre-enrollment applies.
-        machineEnrolled = enrolled;
+          # Set the host platform via the modern NixOS option rather than the deprecated
+          # `system` argument to nixosSystem/Colmena meta. This suppresses the
+          # "'system' has been renamed to nixpkgs.hostPlatform" evaluation warning.
+          nixpkgs.hostPlatform = systemFor machine;
+
+          # Pass arguments to modules produced by flakes in `modules`.
+          _module.args = {
+            inherit inputs;
+            primaryUser = builtins.head machine.users.admin;
+            machine = machine; # whole instance object — role flakes read hardware.disk.*, os.*, users.*, etc.
+            # True once scripts/enroll-machine.sh has run and committed the encrypted
+            # secrets file for this machine. Roles use this to switch from the bootstrap
+            # plaintext password to sops hashedPasswordFile without breaking pre-enrollment applies.
+            machineEnrolled = enrolled;
+          };
+
+          # Provide home-manager with helpful extra args so home-manager fragments can access inputs and primaryUser.
+          # This makes the module's `homeManagerModules.default` available and parameterized per-host.
+          home-manager.useGlobalPkgs = true;
+          home-manager.useUserPackages = true;
+
+          home-manager.extraSpecialArgs = {
+            inherit inputs;
+            primaryUser = builtins.head machine.users.admin;
+          };
+
+          networking.hostName = machine.hostname;
+
+          # Only set defaultSopsFile when enrolled — sops-nix validates the file at
+          # activation even if no secrets are declared, so pointing at an empty/missing
+          # file on unenrolled machines would break every apply.
+          sops.defaultSopsFile = lib.mkIf enrolled secretsFile;
+        };
+
+      # Colmena host wrapper: extends mkHost with deployment.* options.
+      # These options are injected by Colmena's own module system and MUST NOT appear in
+      # nixosConfigurations (which doesn't load that module) or evaluation will error.
+      mkColmenaHost = name: machine: {
+        imports = [ (mkHost name machine) ];
+        deployment = {
+          # SSH address — set address in inventory/machines (static IP recommended).
+          targetHost = machine.address;
+          targetUser = builtins.head machine.users.admin;
+          tags = machine.tags or [ ];
+          # Allows `colmena apply-local` to be run directly on the target machine itself.
+          # Useful when deploying from testbed (no remote Nix host required).
+          allowLocalDeployment = true;
+          # Build the closure on the target; avoids needing a local Nix store.
+          buildOnTarget = true;
+        };
       };
 
-      # Provide home-manager with helpful extra args so home-manager fragments can access inputs and primaryUser.
-      # This makes the module's `homeManagerModules.default` available and parameterized per-host.
-      home-manager.extraSpecialArgs = { inherit inputs; primaryUser = builtins.head machine.users.admin; };
+      # Colmena host map — uses mkColmenaHost so deployment.* options are present.
+      # nixosConfigurations (below) calls mkHost directly, stays free of Colmena options.
+      hosts = builtins.mapAttrs mkColmenaHost inventory.machines;
 
-      networking.hostName = machine.hostname;
-
-      # Only set defaultSopsFile when enrolled — sops-nix validates the file at
-      # activation even if no secrets are declared, so pointing at an empty/missing
-      # file on unenrolled machines would break every apply.
-      sops.defaultSopsFile = lib.mkIf enrolled secretsFile;
-    };
-
-    # Colmena host wrapper: extends mkHost with deployment.* options.
-    # These options are injected by Colmena's own module system and MUST NOT appear in
-    # nixosConfigurations (which doesn't load that module) or evaluation will error.
-    mkColmenaHost = name: machine: {
-      imports = [ (mkHost name machine) ];
-      deployment = {
-        # SSH address — set address in inventory/machines (static IP recommended).
-        targetHost           = machine.address;
-        targetUser           = builtins.head machine.users.admin;
-        tags                 = machine.tags or [];
-        # Allows `colmena apply-local` to be run directly on the target machine itself.
-        # Useful when deploying from testbed (no remote Nix host required).
-        allowLocalDeployment = true;
-        # Build the closure on the target; avoids needing a local Nix store.
-        buildOnTarget        = true;
-      };
-    };
-
-    # Colmena host map — uses mkColmenaHost so deployment.* options are present.
-    # nixosConfigurations (below) calls mkHost directly, stays free of Colmena options.
-    hosts = builtins.mapAttrs mkColmenaHost inventory.machines;
-
-    # os.system is already a valid Nix system string (e.g. x86_64-linux) — used directly.
-    systemFor = machine: machine.os.system;
-  in {
-    # Colmena expects a top-level attribute containing a `meta` attr (nixpkgs + specialArgs)
-    # and then the host entries. We compose that by merging `meta` with our `hosts` map.
-    #
-    # NOTE: The `colmena` attribute below is the *hive configuration* (legacy output name).
-    # The `colmenaHive` attribute wraps it via `colmena.lib.makeHive` — this is the output
-    # that modern colmena (main branch, Nix 2.21+ pure mode) actually reads by default.
-    # The legacy `colmena` output requires `--legacy-flake-eval` on Nix 2.21+ and is kept
-    # only as source data for `colmena.lib.makeHive`.
-    colmena = {
-      meta = {
-        # nixpkgs for the colmena build environment.
-        # Use nixpkgs.legacyPackages to avoid the "'system' has been renamed to
-        # nixpkgs.hostPlatform" warning — each host already sets hostPlatform
-        # via nixpkgs.hostPlatform in mkHost.
-        nixpkgs = nixpkgs.legacyPackages.x86_64-linux;
-        # Forward all inputs so role flakes can import nested inputs if needed
-        specialArgs = inputs;
-      };
-    } // hosts;
-
-    # colmenaHive is the output that colmena main branch reads by default (Nix 2.21+ pure mode).
-    # It wraps the `colmena` hive configuration above via colmena.lib.makeHive.
-    colmenaHive = colmena.lib.makeHive self.outputs.colmena;
-
-    # nixosConfigurations must hold nixpkgs.lib.nixosSystem results so that
-    # `nix build .#nixosConfigurations.<host>.config.system.build.toplevel` works.
-    nixosConfigurations = builtins.mapAttrs (name: machine:
-      nixpkgs.lib.nixosSystem {
-        modules = [ (mkHost name machine) ];
-        # Make all flake inputs available as module args (same as Colmena's specialArgs above).
-        specialArgs = inputs;
+      # os.system is already a valid Nix system string (e.g. x86_64-linux) — used directly.
+      systemFor = machine: machine.os.system;
+    in
+    {
+      # Colmena expects a top-level attribute containing a `meta` attr (nixpkgs + specialArgs)
+      # and then the host entries. We compose that by merging `meta` with our `hosts` map.
+      #
+      # NOTE: The `colmena` attribute below is the *hive configuration* (legacy output name).
+      # The `colmenaHive` attribute wraps it via `colmena.lib.makeHive` — this is the output
+      # that modern colmena (main branch, Nix 2.21+ pure mode) actually reads by default.
+      # The legacy `colmena` output requires `--legacy-flake-eval` on Nix 2.21+ and is kept
+      # only as source data for `colmena.lib.makeHive`.
+      colmena = {
+        meta = {
+          # nixpkgs for the colmena build environment.
+          # Use nixpkgs.legacyPackages to avoid the "'system' has been renamed to
+          # nixpkgs.hostPlatform" warning — each host already sets hostPlatform
+          # via nixpkgs.hostPlatform in mkHost.
+          nixpkgs = nixpkgs.legacyPackages.x86_64-linux;
+          # Forward all inputs so role flakes can import nested inputs if needed
+          specialArgs = inputs;
+        };
       }
-    ) inventory.machines;
-  };
+      // hosts;
+
+      # colmenaHive is the output that colmena main branch reads by default (Nix 2.21+ pure mode).
+      # It wraps the `colmena` hive configuration above via colmena.lib.makeHive.
+      colmenaHive = colmena.lib.makeHive self.outputs.colmena;
+
+      # nixosConfigurations must hold nixpkgs.lib.nixosSystem results so that
+      # `nix build .#nixosConfigurations.<host>.config.system.build.toplevel` works.
+      nixosConfigurations = builtins.mapAttrs (
+        name: machine:
+        nixpkgs.lib.nixosSystem {
+          modules = [ (mkHost name machine) ];
+          # Make all flake inputs available as module args (same as Colmena's specialArgs above).
+          specialArgs = inputs;
+        }
+      ) inventory.machines;
+    };
 }
