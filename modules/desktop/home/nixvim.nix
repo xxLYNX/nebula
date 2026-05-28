@@ -27,30 +27,39 @@
     colorscheme = "moonfly";
 
     opts = {
-      number         = true;
+      number = true;
       relativenumber = true;
-      wrap           = true;
-      cursorline     = true;
-      signcolumn     = "yes";
-      scrolloff      = 3;
-      clipboard      = "unnamedplus";
+      wrap = true;
+      cursorline = true;
+      signcolumn = "yes";
+      scrolloff = 3;
+      clipboard = "unnamedplus";
     };
 
-    extraPackages = with pkgs; [ curl ripgrep file ];
+    extraPackages = with pkgs; [
+      curl
+      ripgrep
+      file
+    ];
 
     # ── Syntax highlighting ────────────────────────────────────────────────
     plugins.treesitter = {
       enable = true;
       highlight.enable = true;
       grammarPackages = with config.programs.nixvim.plugins.treesitter.package.builtGrammars; [
-        go gomod gosum gowork
+        go
+        gomod
+        gosum
+        gowork
         yaml
-        javascript typescript tsx
+        javascript
+        typescript
+        tsx
         bash
         nix
       ];
     };
-    plugins.treesitter-context.enable = true
+    plugins.treesitter-context.enable = true;
 
     # ── LSP ───────────────────────────────────────────────────────────────
     plugins.lsp = {
@@ -60,13 +69,13 @@
           enable = true;
           settings.gopls = {
             analyses.unusedparams = true;
-            staticcheck           = true;
-            completeUnimported    = true;
+            staticcheck = true;
+            completeUnimported = true;
           };
         };
-        ts_ls.enable  = true;  # javascript / typescript
+        ts_ls.enable = true; # javascript / typescript
         bashls.enable = true;
-        nixd.enable   = true;  # nix LSP
+        nixd.enable = true; # nix LSP
       };
     };
 
@@ -75,11 +84,13 @@
     plugins.indent-blankline = {
       enable = true;
       settings = {
-        indent = { char = "│"; };
+        indent = {
+          char = "│";
+        };
         scope = {
-          enabled         = true;
-          show_start      = true;
-          show_end        = true;
+          enabled = true;
+          show_start = true;
+          show_end = true;
           show_exact_scope = true;
         };
       };
@@ -87,7 +98,7 @@
 
     # ── Completion ────────────────────────────────────────────────────────
     plugins.cmp = {
-      enable            = true;
+      enable = true;
       autoEnableSources = true;
       settings = {
         preselect = "cmp.PreselectMode.Item";
@@ -106,12 +117,12 @@
     plugins.lint = {
       enable = true;
       lintersByFt = {
-        go               = [ "golangcilint" ];
-        javascript       = [ "eslint" ];
-        typescript       = [ "eslint" ];
-        typescriptreact  = [ "eslint" ];
-        javascriptreact  = [ "eslint" ];
-        bash             = [ "shellcheck" ];
+        go = [ "golangcilint" ];
+        javascript = [ "eslint" ];
+        typescript = [ "eslint" ];
+        typescriptreact = [ "eslint" ];
+        javascriptreact = [ "eslint" ];
+        bash = [ "shellcheck" ];
       };
     };
 
@@ -120,16 +131,19 @@
       enable = true;
       settings = {
         formatters_by_ft = {
-          go              = [ "goimports" "gofumpt" ];
-          javascript      = [ "prettier" ];
-          typescript      = [ "prettier" ];
+          go = [
+            "goimports"
+            "gofumpt"
+          ];
+          javascript = [ "prettier" ];
+          typescript = [ "prettier" ];
           javascriptreact = [ "prettier" ];
           typescriptreact = [ "prettier" ];
-          bash            = [ "shfmt" ];
-          nix             = [ "nixfmt" ];
+          bash = [ "shfmt" ];
+          nix = [ "nixfmt" ];
         };
         format_on_save = {
-          timeout_ms   = 500;
+          timeout_ms = 500;
           lsp_fallback = true;
         };
       };
@@ -156,32 +170,35 @@
     # ── Keymaps ───────────────────────────────────────────────────────────
     keymaps = [
       {
-        mode   = "n";
-        key    = "<leader>ac";
+        mode = "n";
+        key = "<leader>ac";
         action = "<cmd>CodeCompanionChat<CR>";
         options.desc = "CodeCompanion chat";
       }
       {
-        mode   = [ "n" "v" ];
-        key    = "<leader>aa";
+        mode = [
+          "n"
+          "v"
+        ];
+        key = "<leader>aa";
         action = "<cmd>CodeCompanion<CR>";
         options.desc = "CodeCompanion inline";
       }
       {
-        mode   = "n";
-        key    = "<leader>ap";
+        mode = "n";
+        key = "<leader>ap";
         action = "<cmd>CodeCompanionActions<CR>";
         options.desc = "CodeCompanion actions";
       }
       {
-        mode   = "i";
-        key    = "<C-l>";
+        mode = "i";
+        key = "<C-l>";
         action = ''copilot#Accept("\<CR>")'';
         options = {
-          expr             = true;
-          silent           = true;
+          expr = true;
+          silent = true;
           replace_keycodes = false;
-          desc             = "Accept Copilot suggestion";
+          desc = "Accept Copilot suggestion";
         };
       }
     ];
@@ -191,12 +208,21 @@
   home.packages = with pkgs; [
     # Go — gopls is managed by nixvim's LSP plugin; omitted here to avoid
     # a buildEnv conflict on the `modernize` binary (gopls 0.21+ and gotools both ship it).
-    go golangci-lint gotools gofumpt
+    go
+    golangci-lint
+    gotools
+    gofumpt
     # JavaScript / TypeScript
-    typescript-language-server typescript eslint prettier
+    typescript-language-server
+    typescript
+    eslint
+    prettier
     # Bash
-    bash-language-server shellcheck shfmt
+    bash-language-server
+    shellcheck
+    shfmt
     # Nix
-    nixd pkgs.nixfmt
+    nixd
+    pkgs.nixfmt
   ];
 }
