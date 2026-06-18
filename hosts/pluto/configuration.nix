@@ -18,6 +18,8 @@
     rustc
     gcc
     gnumake
+    android-tools # gives adb, fastboot
+    android-studio
   ];
 
   services.power-profiles-daemon.enable = true;
