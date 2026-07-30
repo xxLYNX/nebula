@@ -20,7 +20,7 @@
     gnumake
     android-tools # gives adb, fastboot
     android-studio
-    texlive.combined.scheme-medium # latex-for-resume-repo
+    texlive.combined.scheme-full # latex-for-resume-repo
   ];
 
   services.power-profiles-daemon.enable = true;
