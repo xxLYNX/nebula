@@ -21,6 +21,7 @@
     android-tools # gives adb, fastboot
     android-studio
     texlive.combined.scheme-full # latex-for-resume-repo
+    gh
   ];
 
   services.power-profiles-daemon.enable = true;
