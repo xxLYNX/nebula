@@ -22,6 +22,8 @@
     android-studio
     texlive.combined.scheme-full # latex-for-resume-repo
     gh
+    tio
+    usbutils
   ];
 
   services.power-profiles-daemon.enable = true;
