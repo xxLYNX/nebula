@@ -24,6 +24,7 @@
     gh
     tio
     usbutils
+    forgejo-cli
   ];
 
   services.power-profiles-daemon.enable = true;
