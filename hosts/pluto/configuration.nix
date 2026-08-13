@@ -5,7 +5,7 @@
   ];
 
   environment.systemPackages = with pkgs; [
-    tailscaled
+    tailscale
     asusctl
     fzf
     yazi
@@ -29,6 +29,9 @@
   ];
 
   services.power-profiles-daemon.enable = true;
+  services.tailscale = {
+    enable = true;
+  }
 
   services.asusd = {
     enable = true;
