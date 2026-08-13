@@ -5,6 +5,7 @@
   ];
 
   environment.systemPackages = with pkgs; [
+    tailscaled
     asusctl
     fzf
     yazi
