@@ -26,6 +26,7 @@
     tio
     usbutils
     forgejo-cli
+    brightnessctl
   ];
 
   services.power-profiles-daemon.enable = true;
