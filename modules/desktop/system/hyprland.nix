@@ -49,6 +49,8 @@ lib.mkIf (cfg.enable or false) {
     HandlePowerKey = "poweroff";
   };
 
+  programs.gdk-pixbuf.modulePackages = [ pkgs.librsvg ];
+
   environment.systemPackages = with pkgs; [
     udiskie
   ];

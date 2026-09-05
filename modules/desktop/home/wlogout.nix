@@ -5,15 +5,79 @@ let
   theme = import ../themes/nebula/colors.nix;
   hmCfg = config.homeManager.desktop or {};
   icons = "${pkgs.wlogout}/share/wlogout/icons";
-  # GTK resolves url() relative to the stylesheet (~/.config/wlogout/style.css).
-  icon = name: "image(url(\"icons/${name}.png\"), url(\"${icons}/${name}.png\"))";
+  # GTK3 CSS accepts #RRGGBB or rgba(), not #RRGGBBAA used elsewhere in the theme.
+  wlogoutStyle = pkgs.writeText "wlogout-style.css" ''
+    * {
+      background-image: none;
+      box-shadow: none;
+    }
+
+    window {
+      background-color: rgba(0, 0, 0, 0.94);
+    }
+
+    button {
+      color: #${theme.text};
+      background-color: #${theme.surface};
+      border-style: solid;
+      border-width: 1px;
+      border-color: rgba(51, 204, 255, 0.93);
+      border-radius: 12px;
+      margin: 8px;
+      background-repeat: no-repeat;
+      background-position: center;
+      background-size: 25%;
+    }
+
+    button:focus,
+    button:active,
+    button:hover {
+      background-color: rgba(69, 71, 90, 1);
+      color: #${theme.accent};
+      border-color: #${theme.accent};
+      outline-style: none;
+    }
+
+    #lock {
+      background-image: image(url("${icons}/lock.png"));
+    }
+
+    #logout {
+      background-image: image(url("${icons}/logout.png"));
+    }
+
+    #suspend {
+      background-image: image(url("${icons}/suspend.png"));
+    }
+
+    #reboot {
+      background-image: image(url("${icons}/reboot.png"));
+    }
+
+    #shutdown {
+      background-image: image(url("${icons}/shutdown.png"));
+    }
+  '';
+  # wlogout defaults to 3 buttons per row; with 5 actions that creates a broken 6th
+  # tile and GTK errors. Force one row and set pixbuf env for GTK image loading on NixOS.
+  wlogoutWrapped = pkgs.symlinkJoin {
+    name = "wlogout-wrapped";
+    paths = [ pkgs.wlogout ];
+    nativeBuildInputs = [ pkgs.makeWrapper ];
+    postBuild = ''
+      wrapProgram $out/bin/wlogout \
+        --add-flags "-p layer-shell" \
+        --add-flags "-b 5" \
+        --set GDK_PIXBUF_MODULE_FILE ${pkgs.gdk-pixbuf}/lib/gdk-pixbuf-2.0/2.10.0/loaders.cache
+    '';
+  };
 in
 lib.mkIf (hmCfg.enable or false) {
-  # Ship icon PNGs beside style.css — bare store paths in CSS are unreliable in GTK.
-  xdg.configFile."wlogout/icons".source = "${pkgs.wlogout}/share/wlogout/icons";
+  xdg.configFile."wlogout/style.css".source = wlogoutStyle;
 
   programs.wlogout = {
     enable = true;
+    package = wlogoutWrapped;
     layout = [
       {
         label   = "lock";
@@ -46,42 +110,5 @@ lib.mkIf (hmCfg.enable or false) {
         keybind = "s";
       }
     ];
-    style = ''
-      * {
-        background-image: none;
-        box-shadow: none;
-      }
-
-      window {
-        background-color: #${theme.backgroundAlpha};
-      }
-
-      button {
-        color: #${theme.textAlpha};
-        background-color: #${theme.surface};
-        border: 1px solid #${theme.borderAlpha};
-        border-radius: 12px;
-        margin: 8px;
-        padding: 32px 24px 16px 24px;
-        background-repeat: no-repeat;
-        background-position: center 30%;
-        background-size: 28%;
-      }
-
-      button:focus,
-      button:active,
-      button:hover {
-        background-color: #${theme.selectionAlpha};
-        color: #${theme.accentAlpha};
-        border-color: #${theme.accentAlpha};
-        outline-style: none;
-      }
-
-      #lock     { background-image: ${icon "lock"}; }
-      #logout   { background-image: ${icon "logout"}; }
-      #suspend  { background-image: ${icon "suspend"}; }
-      #reboot   { background-image: ${icon "reboot"}; }
-      #shutdown { background-image: ${icon "shutdown"}; }
-    '';
   };
 }
