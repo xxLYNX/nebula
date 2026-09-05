@@ -516,6 +516,38 @@ prompts for confirmation.
 
 ---
 
+## 35. GTK/CSS dotfile apps need NixOS-specific handling (wlogout incident)
+
+**Files:** `modules/desktop/home/wlogout.nix`, `modules/desktop/themes/nebula/colors.nix`,
+`modules/desktop/system/hyprland.nix`, `docs/modules/desktop.md`
+
+**Status:** wlogout icons fixed in `bb2b9d4`; underlying footguns remain for the next GTK/CSS app.
+
+Porting upstream dotfile CSS to Home Manager on NixOS failed silently for wlogout power-menu icons.
+Several independent mistakes stacked:
+
+1. **Wrong color format** — `colors.nix` `*Alpha` fields (`#RRGGBBAA`) work for fuzzel/Hyprland but
+   are invalid in GTK3 CSS. GTK logged `Junk at end of value for background-color` and ignored
+   rules below (including icon `background-image` selectors).
+2. **Wrong asset paths** — `programs.wlogout.style` as a multiline string writes an isolated
+   `style.css` under `/nix/store`. Relative `url("icons/…")` resolves from that file's directory
+   (or from `~/.config/wlogout/` at runtime), not from packaged PNG paths. Passing a store path as
+   a *string* to `style` makes HM write the path text as CSS content instead of symlinking the file.
+3. **Unwrapped GTK binary** — wlogout is not wrapped like many NixOS GTK apps; image loading may
+   need `GDK_PIXBUF_MODULE_FILE` (see `programs.gdk-pixbuf.modulePackages` in the desktop system
+   fragment).
+4. **Upstream grid bug** — wlogout defaults to three buttons per row; five actions creates a broken
+   sixth tile (`gtk_label_set_*` critical errors). Wrapper now passes `-b 5`.
+
+**Fix applied:** valid `rgba()` CSS, absolute store paths to `pkgs.wlogout` icons, `xdg.configFile`
+for `style.css`, wrapped wlogout, `programs.gdk-pixbuf.modulePackages = [ pkgs.librsvg ]`.
+
+**Remaining debt:** no shared GTK-CSS color exports in `colors.nix`; no checklist for future
+GTK/CSS HM fragments. See **NixOS GTK / CSS gotchas** in `docs/modules/desktop.md` before adding
+another custom-stylesheet app.
+
+---
+
 ## Summary by priority
 
 | Priority | Item |
@@ -550,6 +582,7 @@ prompts for confirmation.
 | Maintainability | 32 — LSP binaries in home.packages instead of server package option |
 | Correctness | 33 — colmena package reference breaks on non-x86_64/aarch64 hosts |
 | UX / accidental | 34 — `$mainMod, M` exits Hyprland with no confirmation |
+| NixOS integration | 35 — GTK/CSS apps need NixOS-specific handling ✅ wlogout fixed; pattern doc added |
 | Style | 13 — `or {}` guards |
 | Style | 14 — snake_case option name |
 | Style | 15 — hardcoded dunst frame_color |

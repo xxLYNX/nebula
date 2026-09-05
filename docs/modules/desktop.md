@@ -73,6 +73,45 @@ A custom hyprland.conf can be substituted per-machine via `homeManager.desktop.h
 
 ---
 
+## NixOS GTK / CSS gotchas
+
+Use this checklist when adding or porting a Home Manager app that ships custom GTK CSS and
+file-based icons (wlogout, waybar-adjacent GTK panels, etc.). Full incident write-up: `docs/issues.md` #35.
+
+### Color format
+
+- **GTK3 CSS** accepts `#RRGGBB` or `rgba(r, g, b, a)` — not `#RRGGBBAA`.
+- Nebula `colors.nix` `*Alpha` strings are for fuzzel/Hyprland, not GTK stylesheets. Use explicit
+  `rgba(...)` in GTK CSS or add dedicated `*GtkCss` exports to `colors.nix`.
+
+### Asset paths
+
+- GTK resolves `url(...)` relative to the **stylesheet file's path** (often `~/.config/<app>/…` via
+  symlinks), not “where you think the config lives.”
+- Prefer **absolute nix store paths** to packaged assets (see `wlogout.nix` and nixpkgs' default
+  `/etc/wlogout/style.css`), or ship CSS and assets in **one derivation** so relative paths resolve
+  correctly.
+- For Home Manager: use `xdg.configFile."<app>/style.css".source = …` with a store path, or
+  `programs.<app>.style = drv + "/style.css"` (path type). A string like `"${drv}/style.css"` is
+  **not** a path — HM will `writeText` it as CSS *content*.
+
+### GTK image loading on NixOS
+
+- Enable pixbuf loaders at the system level when icons/images fail to render:
+  `programs.gdk-pixbuf.modulePackages = [ pkgs.librsvg ]` (already set in the desktop system
+  fragment).
+- Consider wrapping bare GTK binaries with `makeWrapper` and `GDK_PIXBUF_MODULE_FILE` when upstream
+  does not (wlogout uses `wlogoutWrapped` in `modules/desktop/home/wlogout.nix`).
+
+### Validate before shipping
+
+- Run the app from a terminal once and check for GTK CSS warnings (`Junk at end of value`, etc.).
+- Confirm icon PNGs exist at the paths referenced in the generated CSS.
+- For wlogout specifically: five actions require `-b 5` (or equivalent) to avoid a broken sixth
+  grid slot.
+
+---
+
 ## Options reference
 
 ```nix
