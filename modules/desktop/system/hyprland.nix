@@ -46,7 +46,7 @@ lib.mkIf (cfg.enable or false) {
   services.logind.settings.Login = {
     HandleLidSwitch = "suspend";
     HandleLidSwitchExternalPower = "ignore";
-    HandlePowerKey = "suspend";
+    HandlePowerKey = "poweroff";
   };
 
   environment.systemPackages = with pkgs; [
