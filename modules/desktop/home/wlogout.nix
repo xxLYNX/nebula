@@ -4,6 +4,8 @@
 let
   theme = import ../themes/nebula/colors.nix;
   hmCfg = config.homeManager.desktop or {};
+  icons = "${pkgs.wlogout}/share/wlogout/icons";
+  icon = name: "image(url(\"${icons}/${name}.png\"))";
 in
 lib.mkIf (hmCfg.enable or false) {
   programs.wlogout = {
@@ -41,33 +43,41 @@ lib.mkIf (hmCfg.enable or false) {
       }
     ];
     style = ''
+      * {
+        background-image: none;
+        box-shadow: none;
+      }
+
       window {
         background-color: #${theme.backgroundAlpha};
-        font-family: sans-serif;
-        font-size: 14px;
       }
 
       button {
         color: #${theme.textAlpha};
         background-color: #${theme.surface};
-        border: 2px solid #${theme.borderAlpha};
+        border: 1px solid #${theme.borderAlpha};
         border-radius: 12px;
         margin: 8px;
         padding: 24px;
+        background-repeat: no-repeat;
+        background-position: center;
+        background-size: 25%;
       }
 
       button:focus,
+      button:active,
       button:hover {
         background-color: #${theme.selectionAlpha};
         color: #${theme.accentAlpha};
         border-color: #${theme.accentAlpha};
+        outline-style: none;
       }
 
-      #lock { background-image: url("lock"); }
-      #logout { background-image: url("logout"); }
-      #suspend { background-image: url("suspend"); }
-      #reboot { background-image: url("reboot"); }
-      #shutdown { background-image: url("shutdown"); }
+      #lock     { background-image: ${icon "lock"}; }
+      #logout   { background-image: ${icon "logout"}; }
+      #suspend  { background-image: ${icon "suspend"}; }
+      #reboot   { background-image: ${icon "reboot"}; }
+      #shutdown { background-image: ${icon "shutdown"}; }
     '';
   };
 }
