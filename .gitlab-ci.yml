@@ -3,7 +3,7 @@
 #
 # Stages:
 #   lint     — static checks (no secrets, no build required): JSON schema, Terraform fmt/validate, Nix flake check
-#   validate — inventory policy enforcement: role present, tags include role, modules allowed for role
+#   validate — inventory policy enforcement: required fields, allowed modules per role
 #   build    — Nix host builds: nixosConfigurations.<host>.config.system.build.toplevel
 #   plan     — Terraform plan (dry-run, no apply); only on protected branches / manual trigger
 #
@@ -33,15 +33,17 @@ lint:json:
   script:
     - echo "==> Validating inventory/machines.json is valid JSON"
     - jq empty inventory/machines.json
-    - echo "==> Checking all machines have required fields (hostname,
-      primaryUser, role, modules)"
+    - echo "==> Checking all machines have required nested fields"
     - |
       jq -e '
         .machines | to_entries[] | .value |
         has("hostname") and
-        has("primaryUser") and
-        has("role") and
-        has("modules")
+        (.users.admin | length > 0) and
+        has("address") and
+        has("os") and
+        (.os | has("type") and has("role")) and
+        has("hardware") and
+        (.hardware.disk | has("device"))
       ' inventory/machines.json
   rules:
     - changes:
@@ -68,14 +70,13 @@ lint:nix-flake-check:
   before_script:
     - echo "experimental-features = nix-command flakes" >> /etc/nix/nix.conf
   script:
-    - echo "==> Running nix flake check (evaluates all flake outputs, no secrets
-      needed)"
+    - echo "==> Running nix flake check (evaluates all flake outputs, no secrets needed)"
     - nix $NIX_FLAGS flake check --no-build
   rules:
     - changes:
         - flake.nix
         - flake.lock
-        - profiles/**/*
+        - roles/**/*
         - modules/**/*
         - hosts/**/*
         - inventory/machines.json
@@ -93,13 +94,11 @@ validate:inventory-policy:
       bash -euo pipefail << 'EOF'
       FAIL=0
 
-      # Allowed modules per role. Extend this as new roles/modules are added.
+      # Allowed modules per role. Extend as new roles/modules are added.
       # Format: role:module1,module2,...
       ALLOWED_MODULES=(
-        "testing:testing,web-utils,maintenance"
-        "desktop:testing,desktop,web-utils,maintenance"
-        "server:security-host,maintenance"
-        "security-host:security-host,maintenance"
+        "testing:desktop,web-utils,maintenance,gaming,security-host"
+        "pluto:desktop,web-utils,maintenance,gaming,security-host"
       )
 
       check_allowed() {
@@ -113,38 +112,37 @@ validate:inventory-policy:
             for a in "${allowed[@]}"; do
               [ "$a" = "$mod" ] && return 0
             done
+            echo "ERROR: module '$mod' is not allowed for role '$role'"
+            return 1
           fi
         done
+        echo "ERROR: unknown role '$role' (not in ALLOWED_MODULES)"
         return 1
       }
 
       while IFS= read -r machine_name; do
-        role=$(jq -r ".machines[\"$machine_name\"].role // empty" inventory/machines.json)
-        tags=$(jq -r ".machines[\"$machine_name\"].tags[]" inventory/machines.json 2>/dev/null || true)
-        modules=$(jq -r ".machines[\"$machine_name\"].modules[]" inventory/machines.json 2>/dev/null || true)
+        role=$(jq -r ".machines[\"$machine_name\"].os.role // empty" inventory/machines.json)
+        os_type=$(jq -r ".machines[\"$machine_name\"].os.type // empty" inventory/machines.json)
+        modules=$(jq -r ".machines[\"$machine_name\"].os.modules[]?" inventory/machines.json 2>/dev/null || true)
 
-        # 1. role must be present
         if [ -z "$role" ]; then
-          echo "ERROR: machine '$machine_name' is missing required 'role' field"
+          echo "ERROR: machine '$machine_name' is missing os.role"
+          FAIL=1
+          continue
+        fi
+
+        if [ "$os_type" = "nixos" ] && ! jq -e ".machines[\"$machine_name\"].os.system" inventory/machines.json >/dev/null; then
+          echo "ERROR: machine '$machine_name' is nixos but missing os.system"
           FAIL=1
         fi
 
-        # 2. tags must include the role
-        if [ -n "$role" ] && ! echo "$tags" | grep -qx "$role"; then
-          echo "ERROR: machine '$machine_name' has role '$role' but tags do not include '$role'"
-          FAIL=1
-        fi
-
-        # 3. modules must be allowed for the role
-        if [ -n "$role" ]; then
-          while IFS= read -r mod; do
-            [ -z "$mod" ] && continue
-            if ! check_allowed "$role" "$mod"; then
-              echo "ERROR: machine '$machine_name' has module '$mod' which is not allowed for role '$role'"
-              FAIL=1
-            fi
-          done <<< "$modules"
-        fi
+        while IFS= read -r mod; do
+          [ -z "$mod" ] && continue
+          if ! check_allowed "$role" "$mod"; then
+            echo "ERROR: machine '$machine_name' lists disallowed module '$mod'"
+            FAIL=1
+          fi
+        done <<< "$modules"
 
         echo "OK: $machine_name (role=$role)"
       done < <(jq -r '.machines | keys[]' inventory/machines.json)
@@ -166,8 +164,6 @@ build:nixos-hosts:
   script:
     - echo "==> Building NixOS toplevel for each host in inventory"
     - |
-      # Read host names from inventory and build each one.
-      # This validates the full NixOS evaluation and module composition without needing secrets.
       hosts=$(nix $NIX_FLAGS eval --json '.#nixosConfigurations' --apply 'builtins.attrNames' | tr -d '[]"' | tr ',' '\n')
       for host in $hosts; do
         echo "--- Building nixosConfigurations.$host ---"
@@ -179,7 +175,7 @@ build:nixos-hosts:
     - changes:
         - flake.nix
         - flake.lock
-        - profiles/**/*
+        - roles/**/*
         - modules/**/*
         - hosts/**/*
         - inventory/machines.json
@@ -196,17 +192,16 @@ plan:terraform:
   script:
     - echo "==> Terraform plan (dry-run, no apply)"
     - terraform -chdir=terraform init -backend=false
-    - terraform -chdir=terraform plan \ -var "target_host=${TF_VAR_target_host}"
-      \ -var "ssh_key_path=${TF_VAR_ssh_key_path:-~/.ssh/id_rsa}" \ -out=tfplan
+    - terraform -chdir=terraform plan \
+        -var "target_host=${TF_VAR_target_host}" \
+        -var "ssh_key_path=${TF_VAR_ssh_key_path:-~/.ssh/id_rsa}" \
+        -out=tfplan
   artifacts:
     paths:
       - terraform/tfplan
     expire_in: 1 day
   rules:
-    # Only run on protected branches or when manually triggered
     - if: "$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH"
       when: manual
     - if: "$CI_COMMIT_BRANCH =~ /^release\\//"
       when: manual
-  # Secrets (protected CI variables): set TF_VAR_target_host and TF_VAR_ssh_key_path
-  # in GitLab > Settings > CI/CD > Variables (mark as Protected + Masked).

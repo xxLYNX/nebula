@@ -39,6 +39,16 @@ lib.mkIf (cfg.enable or false) {
   services.udisks2.enable = true;
   services.gvfs.enable = true;
   security.polkit.enable = true;
+
+  # hyprlock authentication + session power actions (wlogout suspend/reboot/shutdown).
+  security.pam.services.hyprlock = { };
+
+  services.logind.settings.Login = {
+    HandleLidSwitch = "suspend";
+    HandleLidSwitchExternalPower = "ignore";
+    HandlePowerKey = "suspend";
+  };
+
   environment.systemPackages = with pkgs; [
     udiskie
   ];

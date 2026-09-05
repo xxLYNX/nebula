@@ -40,6 +40,7 @@ lib.mkIf ((hmCfg.enable or false) && (hmCfg.theme.enable or true)) {
 
   # Wayland/X11 cursor (also picked up by Hyprland via HYPRCURSOR_*)
   home.pointerCursor = {
+    enable     = true;
     gtk.enable = true;
     package    = cursor;
     name       = theme.cursorName;

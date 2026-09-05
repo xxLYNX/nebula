@@ -2,8 +2,8 @@
   description = "nebula root flake - inventory-driven NixOS config with Colmena";
 
   inputs = {
-    # Pinned to a known-good nixpkgs commit for reproducibility
-    nixpkgs.url = "github:NixOS/nixpkgs/b86751bc4085f48661017fa226dee99fab6c651b";
+    # Track latest nixos-26.05; lock file pins the exact commit for reproducibility.
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-26.05";
 
     # Colmena — main branch (needed for flake-native features including colmenaHive output).
     colmena.url = "github:zhaofengli/colmena";
@@ -19,7 +19,7 @@
 
     # Local role/profile flakes (path-based)
     home-manager = {
-      url = "github:nix-community/home-manager";
+      url = "github:nix-community/home-manager/release-26.05";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     testing = {
@@ -100,7 +100,27 @@
             )
           ]
           ++ [ inputs.${machine.os.role}.nixosModules.default ]
-          ++ (map (mod: registry.nixosModules.${mod}) machine.os.modules);
+          ++ (map (mod: registry.nixosModules.${mod}) machine.os.modules)
+          ++ lib.concatLists (
+            map (
+              mod:
+              lib.optional (lib.elem mod (machine.os.modules or [ ])) (
+                {
+                  desktop = { services.desktop.enable = true; };
+                  web-utils = { services.webUtils.enable = true; };
+                  maintenance = { services.maintenance.enable = true; };
+                  gaming = { services.gaming.enable = true; };
+                  security-host = { services.securityHost.enable = true; };
+                }.${mod} or { }
+              )
+            ) [
+              "desktop"
+              "web-utils"
+              "maintenance"
+              "gaming"
+              "security-host"
+            ]
+          );
 
           # Set the host platform via the modern NixOS option rather than the deprecated
           # `system` argument to nixosSystem/Colmena meta. This suppresses the

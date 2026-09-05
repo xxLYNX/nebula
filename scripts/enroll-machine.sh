@@ -211,16 +211,8 @@ fi
 git add "$SOPS_YAML"
 git add -f "$SECRET_FILE"
 
-# Set enrolled=true in inventory/machines.json.
-# flake.nix reads machine.enrolled directly from the inventory — no
-# builtins.pathExists magic, which is unreliable for interpolated paths.
-# jq is guaranteed present here (added to the auto-bootstrap nix shell above).
-INVENTORY="$REPO/inventory/machines.json"
-jq --arg h "$HOSTNAME" '.machines[$h].enrolled = true' "$INVENTORY" > "${INVENTORY}.tmp" \
-  && mv "${INVENTORY}.tmp" "$INVENTORY"
-git add "$INVENTORY"
-
-# Keep a human-readable marker alongside machine.yaml for reference.
+# Enrollment state SSOT: secrets/machines/<hostname>/enrolled marker file.
+# flake.nix reads this via builtins.pathExists — do not duplicate in inventory.
 MARKER_FILE="$SECRETS_DIR/enrolled"
 printf 'age_pubkey: %s\nenrolled_at: %s\n' "$AGE_PUBKEY" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" > "$MARKER_FILE"
 git add "$MARKER_FILE"

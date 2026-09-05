@@ -38,6 +38,10 @@
     enable = true;
   };
 
+  # asusd's unit uses PrivateMounts and expects /etc/asusd before namespacing.
+  # The NixOS module only creates that path when declarative configs are set.
+  systemd.services.asusd.serviceConfig.ConfigurationDirectory = "asusd";
+
   programs.direnv = {
     enable = true;
     nix-direnv.enable = true;
@@ -69,8 +73,8 @@
   # Intel P-State active mode (default): uses HWP for efficient power management
   # In active mode, "powersave" governor ≈ schedutil (smart scaling)
   # GameMode will automatically boost to "performance" when games launch
+  # services.gaming.enable comes from inventory os.modules (flake.nix)
   services.gaming = {
-    enable = true;
     enable32bit = true;
     cpuGovernor = "powersave"; # In intel_pstate active mode, powersave = smart scaling
   };

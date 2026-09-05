@@ -21,5 +21,10 @@
 #   5. Encrypt: sops --encrypt --in-place secrets/machines/<hostname>/machine.yaml
 #   6. Add the sops.secrets.* declaration in the role and switch hashedPasswordFile.
 #
+# Enrollment state (canonical):
+#   After running scripts/enroll-machine.sh, a marker file is committed at
+#   secrets/machines/<hostname>/enrolled. flake.nix reads this file (not inventory)
+#   to set machineEnrolled and activate sops.defaultSopsFile.
+#
 # *.yaml files (encrypted) are safe to commit; *.template files are plaintext examples.
 # Never commit unencrypted secrets.
