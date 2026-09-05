@@ -5,9 +5,13 @@ let
   theme = import ../themes/nebula/colors.nix;
   hmCfg = config.homeManager.desktop or {};
   icons = "${pkgs.wlogout}/share/wlogout/icons";
-  icon = name: "image(url(\"${icons}/${name}.png\"))";
+  # GTK resolves url() relative to the stylesheet (~/.config/wlogout/style.css).
+  icon = name: "image(url(\"icons/${name}.png\"), url(\"${icons}/${name}.png\"))";
 in
 lib.mkIf (hmCfg.enable or false) {
+  # Ship icon PNGs beside style.css — bare store paths in CSS are unreliable in GTK.
+  xdg.configFile."wlogout/icons".source = "${pkgs.wlogout}/share/wlogout/icons";
+
   programs.wlogout = {
     enable = true;
     layout = [
@@ -58,10 +62,10 @@ lib.mkIf (hmCfg.enable or false) {
         border: 1px solid #${theme.borderAlpha};
         border-radius: 12px;
         margin: 8px;
-        padding: 24px;
+        padding: 32px 24px 16px 24px;
         background-repeat: no-repeat;
-        background-position: center;
-        background-size: 25%;
+        background-position: center 30%;
+        background-size: 28%;
       }
 
       button:focus,
