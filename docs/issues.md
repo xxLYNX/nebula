@@ -548,6 +548,40 @@ another custom-stylesheet app.
 
 ---
 
+## 36. Nixvim release skew vs fleet nixpkgs pin (evaluation warnings)
+
+**Files:** `flake.nix`, `modules/desktop/flake.nix`, `modules/desktop/home/nixvim.nix`
+
+**Symptom:** Evaluating `nixosConfigurations.pluto` (or any host with the desktop module) emits
+home-manager warnings, for example:
+
+- `You are using Nixvim version 26.11 and Nixpkgs version 26.05`
+- `The home-manager.users.<user>.programs.nixvim.nixpkgs.source default value has been affected by your flake input follows` — Nixvim’s internal nixpkgs pin diverges from the root flake’s `nixos-26.05` pin because `modules/desktop/flake.nix` sets `nixvim.inputs.nixpkgs.follows = "nixpkgs"` while Nixvim upstream expects its own pinned nixpkgs for plugin/LSP package sets.
+
+**Why it matters:**
+
+- Nixvim resolves many LSP/plugin packages from whichever nixpkgs instance it uses; a skewed pin can mean **different package versions** than the host system closure (subtle editor vs CLI drift).
+- Plugin/LSP closures may **rebuild or fail** when nixpkgs and nixvim releases are mismatched.
+- Warnings are easy to ignore until a deploy suddenly compiles nixvim for hours or breaks a server binary (related: **#22** nix-community cachix).
+
+**Current wiring:**
+
+| Input | Pin |
+|-------|-----|
+| Root `nixpkgs` | `github:NixOS/nixpkgs/nixos-26.05` |
+| `home-manager` | `release-26.05` (follows root nixpkgs) |
+| `nixvim` (desktop module only) | `github:nix-community/nixvim` — **no release branch pin** |
+
+**Resolution options (pick one policy):**
+
+1. **Align releases (recommended):** Pin nixvim to a branch matching the fleet nixpkgs release (e.g. `github:nix-community/nixvim/nixos-26.05` or whatever nixvim documents for 26.05) and drop `nixvim.inputs.nixpkgs.follows` so nixvim uses its intended nixpkgs pin for plugins, *or* set `programs.nixvim.nixpkgs.source` explicitly to the host `pkgs` after verifying compatibility.
+2. **Bump fleet nixpkgs** to the release nixvim targets (26.11) — larger blast radius across all hosts.
+3. **Suppress only the warning** via `programs.nixvim.version.enableNixpkgsReleaseCheck = false` — does not fix skew; use temporarily while migrating.
+
+**Follow-up:** After pinning, re-eval pluto and confirm warnings are gone; add `nix-community.cachix.org` substituter (**#22**) if nixvim still builds from source on every apply.
+
+---
+
 ## Summary by priority
 
 | Priority | Item |
@@ -583,6 +617,7 @@ another custom-stylesheet app.
 | Correctness | 33 — colmena package reference breaks on non-x86_64/aarch64 hosts |
 | UX / accidental | 34 — `$mainMod, M` exits Hyprland with no confirmation |
 | NixOS integration | 35 — GTK/CSS apps need NixOS-specific handling ✅ wlogout fixed; pattern doc added |
+| Correctness / drift | 36 — Nixvim 26.11 vs nixpkgs 26.05 pin skew |
 | Style | 13 — `or {}` guards |
 | Style | 14 — snake_case option name |
 | Style | 15 — hardcoded dunst frame_color |

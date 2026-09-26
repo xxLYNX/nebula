@@ -98,7 +98,7 @@ validate:inventory-policy:
       # Format: role:module1,module2,...
       ALLOWED_MODULES=(
         "testing:desktop,web-utils,maintenance,gaming,security-host"
-        "pluto:desktop,web-utils,maintenance,gaming,security-host"
+        "pluto:desktop,web-utils,maintenance,gaming,security-host,dev"
       )
 
       check_allowed() {

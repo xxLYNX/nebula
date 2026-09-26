@@ -111,6 +111,7 @@
                   maintenance = { services.maintenance.enable = true; };
                   gaming = { services.gaming.enable = true; };
                   security-host = { services.securityHost.enable = true; };
+                  dev = { services.dev.enable = true; };
                 }.${mod} or { }
               )
             ) [
@@ -119,6 +120,7 @@
               "maintenance"
               "gaming"
               "security-host"
+              "dev"
             ]
           );
 

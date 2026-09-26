@@ -6,7 +6,7 @@ cd "$(dirname "$0")/.."
 FAIL=0
 ALLOWED_MODULES=(
   "testing:desktop,web-utils,maintenance,gaming,security-host"
-  "pluto:desktop,web-utils,maintenance,gaming,security-host"
+  "pluto:desktop,web-utils,maintenance,gaming,security-host,dev"
 )
 
 check_allowed() {

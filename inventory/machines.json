@@ -38,7 +38,7 @@
         "type": "nixos",
         "system": "x86_64-linux",
         "role": "pluto",
-        "modules": ["desktop", "web-utils", "maintenance", "gaming"]
+        "modules": ["desktop", "web-utils", "maintenance", "gaming", "dev"]
       },
       "hardware": {
         "form": "desktop",
