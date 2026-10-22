@@ -1,6 +1,11 @@
 #!/usr/bin/env bash
 # OOM → hanging small POST; dump open FDs + wchan for wedged Apache worker(s).
+# Run as the same user that owns rootless podman (voyager) — not sudo.
 set -euo pipefail
+if [[ "$(id -u)" -eq 0 ]] && [[ -z "${BLACKHOLE_ALLOW_ROOT_PODMAN:-}" ]]; then
+  echo "refuse: run as voyager (rootless podman); sudo sees a different container store" >&2
+  exit 125
+fi
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROBE="${PROBE:-$SCRIPT_DIR/oom_rfc1867_http_probe.py}"
 CONTAINER="${CONTAINER:-blackhole-lab_web_1}"

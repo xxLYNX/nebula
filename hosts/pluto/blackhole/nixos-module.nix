@@ -96,10 +96,15 @@ let
       set -euo pipefail
       GUEST="''${1:-voyager@192.168.100.188}"
       LAB="''${BLACKHOLE_LAB:-/etc/blackhole/lab}"
-      ${pkgs.rsync}/bin/rsync -av --delete \
-        "$LAB/" "$GUEST:~/blackhole-lab/"
-      ${pkgs.rsync}/bin/rsync -av \
-        "$LAB/scripts/" "$GUEST:~/blackhole-scripts/"
+      RSYNC="${pkgs.rsync}/bin/rsync"
+      ssh "$GUEST" "mkdir -p ~/blackhole-lab ~/blackhole-scripts"
+      if ssh "$GUEST" command -v rsync >/dev/null 2>&1; then
+        "$RSYNC" -av --delete "$LAB/" "$GUEST:~/blackhole-lab/"
+        "$RSYNC" -av "$LAB/scripts/" "$GUEST:~/blackhole-scripts/"
+      else
+        ${pkgs.gnutar}/bin/tar -C "$LAB" -cf - . | ssh "$GUEST" "tar -xf - -C ~/blackhole-lab"
+        ${pkgs.gnutar}/bin/tar -C "$LAB/scripts" -cf - . | ssh "$GUEST" "tar -xf - -C ~/blackhole-scripts"
+      fi
       echo "synced lab + scripts to $GUEST"
     '')
     (writeShellScriptBin "blackhole-build-asan-image" ''
