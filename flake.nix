@@ -44,6 +44,12 @@
       url = "path:./modules/registry";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+
+    # GDB plugin bundle for the pluto blackhole PHP runtime research lab.
+    pwndbg = {
+      url = "github:pwndbg/pwndbg/dev";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs =

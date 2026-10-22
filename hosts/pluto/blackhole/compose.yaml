@@ -1,0 +1,18 @@
+# Podman Compose — run inside the blackhole VM only (Apache + mod_php).
+# Vulnerable/patched pairs: 8.4.26/8.4.27, 8.3.35/8.3.36, 8.2.34/8.2.35, 8.5.11/8.5.12
+# Example: PHP_VERSION=8.4.26 blackhole-compose up -d
+services:
+  web:
+    image: "docker.io/library/php:${PHP_VERSION:-8.4.26}-apache"
+    ports:
+      - "127.0.0.1:8080:80"
+    volumes:
+      - ./app:/var/www/html:ro
+      - ./data/uploads:/var/www/uploads
+      - ./secret:/var/blackhole:ro
+      - ./conf/php-lab.ini:/usr/local/etc/php/conf.d/zz-lab.ini:ro
+    mem_limit: 512m
+    pids_limit: 64
+    security_opt:
+      - no-new-privileges:true
+    restart: "no"

@@ -1,4 +1,29 @@
-{ client, pkgs, ... }:
+{ client, inputs, pkgs, lib, ... }:
+let
+  inherit (pkgs.stdenv.hostPlatform) system;
+  pwndbgPkg = inputs.pwndbg.packages.${system}.pwndbg;
+  blackholeLab = ./blackhole;
+  # blackholePackages — merged into environment.systemPackages (options marked below).
+  blackholePackages = with pkgs; [
+    virt-manager
+    virt-viewer
+    qemu_kvm
+    OVMF
+    libguestfs
+    cloud-utils
+    podman-compose
+    binutils
+    pwndbgPkg
+    ghidra
+    valgrind
+    (writeShellScriptBin "blackhole-compose" ''
+      exec ${podman-compose}/bin/podman-compose -f /etc/blackhole/lab/compose.yaml "$@"
+    '')
+    (writeShellScriptBin "blackhole-gdb" ''
+      exec ${pwndbgPkg}/bin/pwndbg "$@"
+    '')
+  ];
+in
 {
   imports = [
     ./hardware-configuration.nix
@@ -25,7 +50,7 @@
     usbutils
     forgejo-cli
     brightnessctl
-  ];
+  ] ++ blackholePackages;
 
   services.power-profiles-daemon.enable = true;
   services.tailscale = {
@@ -76,5 +101,61 @@
     enable32bit = true;
     cpuGovernor = "powersave"; # In intel_pstate active mode, powersave = smart scaling
   };
+
+  # --- blackhole: PHP 2026 runtime research lab (host tooling + isolated libvirt net) ---
+
+  nix.settings.substituters = lib.mkAfter [ "https://pwndbg.cachix.org" ];
+  nix.settings.trusted-public-keys = lib.mkAfter [
+    "pwndbg.cachix.org-1:HhtIpP7j73SnuzLgobqqa8LVTng5Qi36sQtNt79cD3k="
+  ];
+
+  virtualisation.libvirtd.enable = true;
+  virtualisation.libvirtd.qemu.package = pkgs.qemu_kvm;
+
+  virtualisation.podman = {
+    enable = true;
+    dockerCompat = false;
+    defaultNetwork.settings = {
+      dns_enabled = true;
+    };
+  };
+
+  programs.dconf.enable = true;
+
+  users.users.voyager.extraGroups = lib.mkAfter [
+    "libvirtd"
+    "kvm"
+    "podman"
+  ];
+
+  environment.etc."blackhole/libvirt-network.xml".source = "${blackholeLab}/libvirt-blackhole.xml";
+  environment.etc."blackhole/lab".source = blackholeLab;
+
+  systemd.services.blackhole-libvirt-network = {
+    description = "blackhole isolated libvirt network";
+    after = [ "libvirtd.service" ];
+    requires = [ "libvirtd.service" ];
+    wantedBy = [ "multi-user.target" ];
+    path = [ pkgs.libvirt ];
+    serviceConfig = {
+      Type = "oneshot";
+      RemainAfterExit = true;
+    };
+    script = ''
+      if ! virsh net-info blackhole >/dev/null 2>&1; then
+        virsh net-define /etc/blackhole/libvirt-network.xml
+        virsh net-autostart blackhole
+      fi
+      virsh net-start blackhole 2>/dev/null || true
+    '';
+  };
+
+  environment.interactiveShellInit = lib.mkAfter ''
+    # blackhole lab helpers (plain GDB remains ${pkgs.gdb}/bin/gdb).
+    export BLACKHOLE_LAB=/etc/blackhole/lab
+    alias blackhole-gdb='${pwndbgPkg}/bin/pwndbg'
+  '';
+
+  # --- end blackhole ---
 
 }
