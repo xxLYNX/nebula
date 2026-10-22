@@ -1,0 +1,17 @@
+# Podman Compose lab stack — run inside the blackhole VM, not on pluto host.
+# Example:
+#   PHP_VERSION=8.4.26 podman compose up -d
+#   curl -i http://127.0.0.1:8080/
+services:
+  web:
+    image: "docker.io/library/php:${PHP_VERSION:-8.4.26}-apache"
+    ports:
+      - "127.0.0.1:8080:80"
+    volumes:
+      - ./app:/var/www/html:ro
+      - ./conf/php-lab.ini:/usr/local/etc/php/conf.d/zz-lab.ini:ro
+    mem_limit: 512m
+    pids_limit: 64
+    security_opt:
+      - no-new-privileges:true
+    restart: "no"
