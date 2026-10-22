@@ -102,8 +102,8 @@ let
         "$RSYNC" -av --delete "$LAB/" "$GUEST:~/blackhole-lab/"
         "$RSYNC" -av "$LAB/scripts/" "$GUEST:~/blackhole-scripts/"
       else
-        ${pkgs.gnutar}/bin/tar -C "$LAB" -cf - . | ssh "$GUEST" "tar -xf - -C ~/blackhole-lab"
-        ${pkgs.gnutar}/bin/tar -C "$LAB/scripts" -cf - . | ssh "$GUEST" "tar -xf - -C ~/blackhole-scripts"
+        ${pkgs.gnutar}/bin/tar -C "$LAB" -cf - . | ssh "$GUEST" "tar -xf - -C ~/blackhole-lab --overwrite && chmod -R u+w ~/blackhole-lab"
+        ${pkgs.gnutar}/bin/tar -C "$LAB/scripts" -cf - . | ssh "$GUEST" "tar -xf - -C ~/blackhole-scripts --overwrite && chmod -R u+w ~/blackhole-scripts"
       fi
       echo "synced lab + scripts to $GUEST"
     '')
