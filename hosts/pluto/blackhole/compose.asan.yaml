@@ -1,0 +1,14 @@
+# Merge when BLACKHOLE_ASAN=1 and image built via blackhole-build-asan-image.
+services:
+  web:
+    image: "localhost/blackhole-php:${PHP_VERSION:-8.4.26}-asan"
+    cap_add:
+      - SYS_PTRACE
+    security_opt:
+      - label=disable
+    environment:
+      ASAN_OPTIONS: "detect_leaks=1:abort_on_error=0:symbolize=1:fast_unwind_on_malloc=0"
+      LSAN_OPTIONS: "verbosity=0"
+      UBSAN_OPTIONS: "print_stacktrace=1"
+    volumes:
+      - ./conf/php-oom-probe.ini:/usr/local/etc/php/conf.d/zz-lab.ini:ro
