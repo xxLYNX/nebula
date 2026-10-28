@@ -41,6 +41,22 @@
   # The NixOS module only creates that path when declarative configs are set.
   systemd.services.asusd.serviceConfig.ConfigurationDirectory = "asusd";
 
+  # BlueZ stack (bluetoothd) + blueman GUI / bluetoothctl; separate from asusctl platform tuning.
+  services.blueman.enable = true;
+  hardware.bluetooth = {
+    enable = true;
+    powerOnBoot = true;
+    settings = {
+      General = {
+        Experimental = true;
+        FastConnectable = true;
+      };
+      Policy = {
+        AutoEnable = true;
+      };
+    };
+  };
+
   programs.direnv = {
     enable = true;
     nix-direnv.enable = true;
