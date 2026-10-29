@@ -2,7 +2,6 @@
 {
   imports = [
     ./hardware-configuration.nix
-    ./blackhole/nixos-module.nix
   ];
 
   environment.systemPackages = with pkgs; [
