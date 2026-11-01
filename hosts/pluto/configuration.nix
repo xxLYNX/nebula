@@ -5,6 +5,7 @@
   ];
 
   environment.systemPackages = with pkgs; [
+    nautilus
     tailscale
     asusctl
     fzf
@@ -94,5 +95,10 @@
   };
 
   programs.dconf.enable = true;
+
+  programs.nautilus-open-any-terminal = {
+    enable = true;
+    terminal = "kitty";
+  };
 
 }
