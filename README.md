@@ -13,7 +13,7 @@ inventory/machines.json    # Single source of truth: one entry per machine.
 hosts/<name>/              # Per-host config (hardware facts, host-specific overrides).
 roles/<name>/              # Role flakes — compose modules into a machine personality.
 modules/                   # Composable feature modules (desktop, web-utils, …).
-docs/                      # Operator runbooks and migration tracking.
+docs/                      # Operator runbooks, migration tracking, planned capabilities.
 terraform/                 # One-shot provisioner for new machines (nixos-anywhere).
 ```
 
@@ -112,6 +112,16 @@ Not currently in use. Intended future role: bootstrapping pre-NixOS machines (in
 5. Once online: `colmena apply --on myhostname`.
 
 ---
+
+## Docs
+
+| File | Purpose |
+|------|---------|
+| `docs/pending.md` | Migration checklist from legacy `pluto-config` |
+| `docs/planned.md` | Future capabilities (design backlog for larger reworks) |
+| `docs/issues.md` | Known bugs and technical debt |
+| `docs/current-sprint.md` | Active sprint backlog |
+| `docs/BOOTSTRAP.md` | New machine install / enrollment |
 
 ## Pending migration
 
