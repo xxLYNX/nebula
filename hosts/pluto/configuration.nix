@@ -20,6 +20,8 @@
     rustc
     gcc
     gnumake
+    # python3 on PATH (+ jsonschema for archaeology review-packet scripts)
+    (python3.withPackages (ps: with ps; [ jsonschema ]))
     texlive.combined.scheme-full # latex-for-resume-repo
     gh
     tio
