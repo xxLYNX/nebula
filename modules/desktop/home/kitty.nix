@@ -12,6 +12,10 @@ lib.mkIf (hmCfg.enable or false) {
       confirm_os_window_close    = 0;
       dynamic_background_opacity = true;
       enable_audio_bell          = false;
+      # Hyprland can report a tiled window as maximized; Kitty persists that in
+      # ~/.local/state/kitty and the next instance requests fullscreen/maximize.
+      # See kitty#10442 and hyprwm/Hyprland#16404 — upstream fix is this opt-out.
+      remember_window_size       = false;
     };
   };
 }
