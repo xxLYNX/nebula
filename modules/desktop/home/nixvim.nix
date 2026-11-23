@@ -48,6 +48,7 @@ in
         curl
         ripgrep
         file
+        git
       ])
       ++ [
         cursorAgentCompat
@@ -68,9 +69,27 @@ in
         tsx
         bash
         nix
+        markdown
       ];
     };
     plugins.treesitter-context.enable = true;
+
+    # ── Markdown / Obsidian vault ──────────────────────────────────────────
+    plugins.render-markdown.enable = true;
+
+    plugins.obsidian = {
+      enable = true;
+      settings = {
+        legacy_commands = false;
+        workspaces = [
+          {
+            name = "oracle";
+            path = "${config.home.homeDirectory}/oracle";
+          }
+        ];
+        ui.enable = false;
+      };
+    };
 
     # ── LSP ───────────────────────────────────────────────────────────────
     plugins.lsp = {
